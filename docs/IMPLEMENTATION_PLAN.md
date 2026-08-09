@@ -8,6 +8,7 @@ Related references:
 
 - [Research and product design](../DESIGN_RESEARCH.md)
 - [Testing strategy](./TEST_STRATEGY.md)
+- [Problem generation and session composition](./PROBLEM_GENERATION.md)
 
 ## Delivery principles
 
@@ -49,7 +50,7 @@ This is intentionally narrower than the eventual MVP. It validates almost every 
 - Seeded problem and distractor generation.
 - Four large answer cards.
 - Subtle count-up timer.
-- Approximately 250–400 ms feedback state.
+- A short correct-answer feedback state and a slightly longer incorrect-answer feedback state.
 - Previous-answer feedback ribbon.
 - Results and initial scoring.
 - Paw Coins.
@@ -338,8 +339,8 @@ Folders should be introduced only when needed; this is a target shape, not a req
 Add one independently verified slice at a time:
 
 1. Subtraction, including nonnegative constraints and borrow-aware difficulty.
-2. Multiplication with curated table presets and expandable individual selection.
-3. Division generated from divisor and quotient to guarantee whole-number results.
+2. Multiplication with curated table presets, constrained session composition, and expandable individual selection.
+3. Division generated from divisor and quotient to guarantee whole-number results, with explicit limits on identity and other low-challenge facts.
 4. Mixed operations with balanced short-session coverage.
 5. Practice mode retry and hint representations.
 6. Time Rush and Endless.

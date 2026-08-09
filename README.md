@@ -2,13 +2,17 @@
 
 An offline-first, multiple-choice arithmetic PWA designed for short, engaging practice sessions on phones and tablets.
 
-The application is still in the design stage. The documents below are the current source of truth.
+The first playable vertical slice is implemented. It includes onboarding, a starter companion, configurable mixed-operation rounds, four difficulty levels, scoring and Paw Coins, a duplicate-protected capsule, a collection gallery, equipping companions, local persistence, and offline PWA support.
 
 ## Project documents
 
 - [Research and product design](./DESIGN_RESEARCH.md) — learning research, product principles, game modes, difficulty, scoring, progress, collectible economy, technical options, and confirmed design decisions.
 - [Implementation plan](./docs/IMPLEMENTATION_PLAN.md) — delivery sequence, first vertical slice, acceptance criteria, architecture boundaries, and milestone definitions.
 - [Testing strategy](./docs/TEST_STRATEGY.md) — testability requirements, automated test layers, visual inspection, accessibility, PWA/device verification, coverage policy, and CI design.
+- [Adding collectible content](./docs/ADDING_CONTENT.md) — the catalog, asset, rarity, and validation workflow for new cats and Special Guests.
+- [Economy tuning](./docs/ECONOMY.md) — current Paw Coin earnings, daily limits, capsule pricing, rationale, and safe tuning points.
+- [Balance analysis](./docs/BALANCE_ANALYSIS.md) — play-history export fields, comparison workflow, simulation strategy, and controls for stable tuning.
+- [Problem generation](./docs/PROBLEM_GENERATION.md) — constrained-random session composition, difficulty bands, variety limits, versioning, and acceptance criteria.
 
 ## Current direction
 
@@ -22,4 +26,26 @@ The application is still in the design stage. The documents below are the curren
 
 ## Current status
 
-The next engineering milestone is the tested vertical slice described in the implementation plan. No application scaffold has been created yet.
+Milestones 0 and 1 and the first end-to-end slice are in place. Addition, subtraction, multiplication, division, mixed-operation balancing, Easy through Advanced difficulties, and 10–50 question rounds are playable. The automated suite covers the deterministic math and reward rules, save migration and round-trips, real-browser components, the complete player journey, accessibility, phone/tablet layouts, and production offline reloads. Development and play-testing are currently local on a Mac; the site has not yet been deployed.
+
+## Run locally
+
+Node.js 24 is used in CI. Install dependencies and start the development server:
+
+```sh
+npm ci
+npm run dev
+```
+
+Run all required checks before committing:
+
+```sh
+npx playwright install chromium
+npm run verify
+```
+
+Useful focused commands are documented in the [testing strategy](./docs/TEST_STRATEGY.md#standard-commands). The development-only state gallery is available at `/?dev=states`.
+
+## Deploy
+
+Pushing to `main` runs verification and builds the app for GitHub Pages. In the repository settings, select **GitHub Actions** as the Pages source once; subsequent successful pushes deploy automatically.

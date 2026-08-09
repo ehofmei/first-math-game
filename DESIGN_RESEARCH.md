@@ -208,7 +208,7 @@ Suggested default: addition and subtraction, Medium, 10 questions, a subtle coun
 
 1. Display one large equation and four large answer cards.
 2. A tap commits the answer immediately and temporarily locks the other answer cards.
-3. Give brief color, icon, and optional sound feedback for approximately 250–400 ms.
+3. Give brief color, icon, and optional sound feedback: initially 340 ms after a correct answer and 500 ms after an incorrect answer.
 4. Advance quickly to the next problem after that feedback beat.
 5. During the next problem, show a compact feedback ribbon for the previous one:
    - Correct: `✓ 7 × 6 = 42`

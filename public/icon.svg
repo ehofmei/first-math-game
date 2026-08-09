@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">A smiling cat beside a plus sign</title>
+  <rect width="512" height="512" rx="112" fill="#5c3df5"/>
+  <path d="M105 199 88 104l91 55a164 164 0 0 1 154 0l91-55-17 95a168 168 0 1 1-302 0Z" fill="#ffe5a8"/>
+  <circle cx="190" cy="260" r="18" fill="#30244e"/>
+  <circle cx="322" cy="260" r="18" fill="#30244e"/>
+  <path d="M222 315c22 21 46 21 68 0" fill="none" stroke="#30244e" stroke-linecap="round" stroke-width="16"/>
+  <path d="M256 275l-17 20h34Z" fill="#e76f7c"/>
+  <path d="M406 326v86m-43-43h86" fill="none" stroke="#fff" stroke-linecap="round" stroke-width="26"/>
+</svg>

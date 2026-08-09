@@ -8,6 +8,7 @@ Related references:
 
 - [Research and product design](../DESIGN_RESEARCH.md)
 - [Implementation plan](./IMPLEMENTATION_PLAN.md)
+- [Problem generation and session composition](./PROBLEM_GENERATION.md)
 
 ## Quality goals
 
@@ -71,7 +72,7 @@ No domain code calls `Date.now()`, `new Date()`, or timer APIs directly. A `Cloc
 - Save/export timestamps.
 - Improvement baseline windows.
 
-UI transitions should use a small scheduler abstraction or framework-compatible fake timers so tests can advance 300 ms instantly and deterministically.
+UI transitions should use a small scheduler abstraction or framework-compatible fake timers so tests can advance the configured feedback interval instantly and deterministically.
 
 ### Replaceable persistence
 
@@ -179,6 +180,9 @@ Use `fast-check` with Vitest for high-volume generated inputs.
 - Whole-number division has no remainder.
 - Mixed sessions contain each selected operation when length permits.
 - No accidental duplicate equations appear unless remediation requests them.
+- Multiplication/division rounds satisfy the versioned low-challenge, focus, identity, zero, unit-divisor, and table-variety limits.
+- Every supported operation combination and question count can be composed without partial output or an unbounded retry loop.
+- Ruleset version, settings, and seed reproduce the exact fact schedule, distractors, and answer order.
 
 #### Statistical checks
 
@@ -186,10 +190,14 @@ Statistical tests should use fixed seeds and generous, mathematically justified 
 
 - Correct-answer positions are approximately uniform.
 - Operation coverage is approximately balanced.
+- Multiplication/division focus-band frequencies increase as specified by difficulty.
+- Large fixed-seed samples never exceed per-round trivial-fact or table-value limits.
 - Capsule outcomes reflect rarity weights over a broad unowned pool.
 - Guided-random weighting favors weak skills without starving normal coverage.
 
 Statistical distribution tests do not replace exact invariant tests.
+
+Session-composition limits are exact invariants, not statistical aspirations. Statistical tests measure the variation that remains inside those limits and detect unintended concentration across many otherwise valid rounds.
 
 #### Save/import fuzzing
 

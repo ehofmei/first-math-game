@@ -4,7 +4,7 @@ import { CAPSULE_COST, DAILY_COIN_CAP } from '../domain/rewards';
 import { scoreAnswer, type SessionSummary } from '../domain/session';
 import type { SaveData } from '../storage/save';
 
-export const PLAY_HISTORY_EXPORT_VERSION = 1;
+export const PLAY_HISTORY_EXPORT_VERSION = 2;
 
 function round(value: number, decimals = 2): number {
   const scale = 10 ** decimals;
@@ -33,9 +33,9 @@ function normalizedSettings(settings: GameSettings): GameSettings {
   };
 }
 
-function configurationKey(settings: GameSettings): string {
+function configurationKey(settings: GameSettings, rulesetVersion: number): string {
   const normalized = normalizedSettings(settings);
-  return `${normalized.operations.join('+')}|${normalized.difficulty}|${normalized.questionCount}`;
+  return `ruleset-${rulesetVersion}|${normalized.operations.join('+')}|${normalized.difficulty}|${normalized.questionCount}`;
 }
 
 function sessionResponseTimes(session: SessionSummary): number[] {
@@ -44,6 +44,7 @@ function sessionResponseTimes(session: SessionSummary): number[] {
 
 export interface HistoryConfigurationSummary {
   key: string;
+  rulesetVersion: number;
   settings: GameSettings;
   rounds: number;
   averageScore: number;
@@ -52,6 +53,15 @@ export interface HistoryConfigurationSummary {
   averageAccuracyPercent: number;
   averageResponseMs: number;
   medianResponseMs: number;
+}
+
+export interface HistoryRulesetSummary {
+  rulesetVersion: number;
+  rounds: number;
+  totalQuestions: number;
+  averageScorePerQuestion: number;
+  averageAccuracyPercent: number;
+  averageResponseMs: number;
 }
 
 export interface PlayHistoryExport {
@@ -86,6 +96,7 @@ export interface PlayHistoryExport {
     averageResponseMs: number;
     totalQuestions: number;
   };
+  rulesets: HistoryRulesetSummary[];
   configurations: HistoryConfigurationSummary[];
   economyEvents: Array<{
     occurredAt: string;
@@ -138,7 +149,7 @@ export function summarizeConfigurations(
 ): HistoryConfigurationSummary[] {
   const grouped = new Map<string, SessionSummary[]>();
   for (const session of sessions) {
-    const key = configurationKey(session.settings);
+    const key = configurationKey(session.settings, session.rulesetVersion);
     grouped.set(key, [...(grouped.get(key) ?? []), session]);
   }
 
@@ -147,6 +158,7 @@ export function summarizeConfigurations(
       const responseTimes = group.flatMap(sessionResponseTimes);
       return {
         key,
+        rulesetVersion: group[0]!.rulesetVersion,
         settings: normalizedSettings(group[0]!.settings),
         rounds: group.length,
         averageScore: round(average(group.map(({ score }) => score))),
@@ -160,6 +172,34 @@ export function summarizeConfigurations(
       };
     })
     .sort((left, right) => right.rounds - left.rounds || left.key.localeCompare(right.key));
+}
+
+export function summarizeRulesets(sessions: readonly SessionSummary[]): HistoryRulesetSummary[] {
+  const versions = new Map<number, SessionSummary[]>();
+  for (const session of sessions) {
+    versions.set(session.rulesetVersion, [
+      ...(versions.get(session.rulesetVersion) ?? []),
+      session,
+    ]);
+  }
+  return [...versions.entries()]
+    .map(([rulesetVersion, group]) => {
+      const responseTimes = group.flatMap(sessionResponseTimes);
+      const totalQuestions = group.reduce((sum, session) => sum + session.answers.length, 0);
+      return {
+        rulesetVersion,
+        rounds: group.length,
+        totalQuestions,
+        averageScorePerQuestion: round(
+          group.reduce((sum, session) => sum + session.score, 0) / totalQuestions,
+        ),
+        averageAccuracyPercent: round(
+          (group.reduce((sum, session) => sum + session.correctCount, 0) / totalQuestions) * 100,
+        ),
+        averageResponseMs: round(average(responseTimes)),
+      };
+    })
+    .sort((left, right) => left.rulesetVersion - right.rulesetVersion);
 }
 
 export function buildPlayHistoryExport(save: SaveData, generatedAt: string): PlayHistoryExport {
@@ -199,6 +239,7 @@ export function buildPlayHistoryExport(save: SaveData, generatedAt: string): Pla
       averageResponseMs: round(average(allResponseTimes)),
       totalQuestions,
     },
+    rulesets: summarizeRulesets(save.sessions),
     configurations: summarizeConfigurations(save.sessions),
     economyEvents: save.economyEvents.map((event) => {
       const collectible = catalog.collectibles.find(({ id }) => id === event.collectibleId);

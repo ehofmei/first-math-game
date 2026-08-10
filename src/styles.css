@@ -647,9 +647,11 @@ button.dashboard-card {
     border-color 160ms ease,
     background 160ms ease;
 }
-.answer-card:hover:not(:disabled) {
-  transform: translateY(-3px);
-  border-color: #ad9bf8;
+@media (hover: hover) and (pointer: fine) {
+  .answer-card:hover:not(:disabled) {
+    transform: translateY(-3px);
+    border-color: #ad9bf8;
+  }
 }
 .answer-card--correct {
   border-color: var(--green);

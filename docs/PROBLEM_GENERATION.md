@@ -88,15 +88,15 @@ Within division:
 - Identity facts are limited to 2 per 10 on Easy and 1 per 10 on Medium, Hard, and Advanced.
 - Unit-divisor facts are limited to 2 per 10 on Easy and 1 per 10 on Medium, Hard, and Advanced.
 
-The composer fills remaining slots with eligible review facts. It does not force the maximum number of low-challenge facts into every round.
+Easy deliberately uses its full low-challenge allowance as foundational practice. Medium and above vary below their maximum and fill remaining slots with eligible review facts.
 
 ### Variety constraints
 
 Within one completed round:
 
-1. Do not repeat an exact fact.
-2. Across multiplication and division together, a table value may appear in at most 3 factor-pair positions per 10 relevant questions on Easy and 2 per 10 on Medium, Hard, and Advanced. The maximum is never lower than 2 in a short mixed round. For example, `11 × 6`, `66 ÷ 11`, and `3 × 11` each consume an appearance of table value `11`.
-3. Do not use the same designated focus table in consecutive multiplication/division questions when another eligible candidate exists.
+1. Keep 10- and 20-question operation sets exact-fact unique. Thirty- and fifty-question rounds may repeat from a constrained category pool, but never consecutively and only after preferring less-used facts.
+2. Across multiplication and division together, a table value may appear in at most 4 factor-pair positions per 10 relevant questions on Easy, 3 on Medium, and 2 on Hard or Advanced. Easy needs the widest allowance because its foundational division pool has only four divisors; Medium needs enough room to mix focus and review facts without forcing contrived low facts. The maximum is never lower than 2 in a short mixed round. For example, `11 × 6`, `66 ÷ 11`, and `3 × 11` each consume an appearance of table value `11`.
+3. Seed-shuffle category positions so focus, review, and low-challenge facts are interleaved rather than presented as fixed blocks. The table-value cap is the primary anti-clustering guarantee.
 4. Randomize multiplication orientation after selecting the normalized fact so the focus value is not always shown on the same side.
 5. Continue randomizing answer positions independently and approximately uniformly.
 6. Preserve balanced selected-operation counts. Composition rules may not starve an operation to satisfy a table preference.
@@ -112,9 +112,9 @@ The composer should use deterministic pools rather than repeatedly generating in
 3. Build all eligible fact candidates for the selected difficulty.
 4. Annotate each candidate with operation, normalized fact ID, factor pair, low-challenge subtypes, review/focus category, and designated table.
 5. Seed-shuffle candidates within their categories.
-6. Fill scheduled slots using category targets, exact-fact uniqueness, table-value caps, and operation requirements.
-7. Use bounded deterministic backtracking when an early choice prevents a valid completion.
-8. If needed, relax only the consecutive-focus-table preference. Do not silently relax arithmetic validity, operation balance, exact-fact uniqueness, low-challenge limits, or focus minimums.
+6. Select focus slots first, then low-challenge and review slots, so later easy choices cannot consume the capacity reserved for the selected difficulty. Return the facts in the seed-shuffled category and operation schedule.
+7. If an early choice prevents a valid completion, discard the partial schedule and make a bounded deterministic retry with newly seed-shuffled category pools.
+8. In a long round whose category pool is smaller than its slot count, allow spaced exact-fact reuse before relaxing arithmetic validity, operation balance, low-challenge limits, focus minimums, or table-value limits.
 9. Generate operation-specific distractors and shuffle answer positions only after the fact schedule is complete.
 
 The implementation must not use an unbounded retry loop. Every supported settings combination must either produce a full valid session or fail a test during development; ordinary gameplay must never expose a partial round.
@@ -163,7 +163,7 @@ Before the new composer is considered complete:
 
 1. Every operation and difficulty still satisfies its arithmetic invariants.
 2. Every supported operation combination and question count produces a complete round across a large fixed seed set.
-3. Every generated round satisfies category targets, subtype limits, exact-fact uniqueness, table-value caps, and operation balance.
+3. Every generated round satisfies category targets, subtype limits, short-round exact-fact uniqueness, long-round repeat spacing, table-value caps, and operation balance.
 4. The same seed, settings, and ruleset reproduce the exact same round.
 5. Correct-answer positions remain approximately uniform across large samples.
 6. Hard multiplication/division contains materially more focus facts than Medium, and Advanced contains materially more Advanced focus facts than Hard.

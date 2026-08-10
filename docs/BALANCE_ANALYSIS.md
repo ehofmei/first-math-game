@@ -49,6 +49,19 @@ The conclusion is that independently uniform questions are not enough. The next 
 
 The same export also confirmed economy compression: on one local test day, 150 questions represented 164 potential Paw Coins, but the first two rounds consumed the entire 30-coin allowance. Economy tuning remains separate from problem-composition tuning so their effects can be measured independently.
 
+### Version 3 simulation baseline
+
+Before local play-testing, the constrained composer was run across 5,000 fixed seeds for each single-operation difficulty using twenty-question rounds.
+
+| Difficulty | Low-challenge multiplication | Low-challenge division | Focus facts | Identity division per round | Highest observed table-value count |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Easy | 30% | 30% | Foundational pool | 0.54 | 7 of 20 |
+| Medium | 10.1% | 10.0% | 50% | 0.54 | 5 of 20 |
+| Hard | 5.1% | 5.0% | 60% | 0.27 | 4 of 20 |
+| Advanced | 5.1% | 5.0% | 60% | 0.26 | 3 of 20 |
+
+The exact per-round caps held for every simulated seed. These figures are engineering baselines, not proof of age-appropriate difficulty; local child play-testing remains necessary.
+
 ## Primary comparisons
 
 Use these in order:

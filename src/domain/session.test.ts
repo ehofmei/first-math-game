@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FakeClock } from './clock';
 import { DEFAULT_SETTINGS, generateSession } from './math';
 import { SeededRandom } from './random';
-import { scoreAnswer, summarizeSession, type AnswerRecord } from './session';
+import { RULESET_VERSION, scoreAnswer, summarizeSession, type AnswerRecord } from './session';
 
 describe('session scoring', () => {
   it('rewards accurate responses with a bounded speed bonus', () => {
@@ -41,6 +41,8 @@ describe('session scoring', () => {
     expect(summary.accuracy).toBe(0.9);
     expect(summary.elapsedMs).toBe(10_000);
     expect(summary.coinsEarned).toBe(11);
+    expect(summary.rulesetVersion).toBe(RULESET_VERSION);
+    expect(summary.rulesetVersion).toBe(3);
     expect(summary.id).toContain(String(clock.now()));
   });
 

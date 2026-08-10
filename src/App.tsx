@@ -359,6 +359,12 @@ function Play({
   onExit: () => void;
 }) {
   const problem = game.problems[game.index];
+  const equationRef = useRef<HTMLHeadingElement>(null);
+
+  useEffect(() => {
+    equationRef.current?.focus({ preventScroll: true });
+  }, [game.index]);
+
   if (!problem) return null;
 
   return (
@@ -396,7 +402,7 @@ function Play({
 
       <section className="question-panel" aria-labelledby="equation">
         <span className="eyebrow">What is the answer?</span>
-        <h1 id="equation">
+        <h1 id="equation" ref={equationRef} tabIndex={-1}>
           <span>{problem.left}</span>
           <span className="operator">{OPERATION_SYMBOLS[problem.operation]}</span>
           <span>{problem.right}</span>
@@ -603,6 +609,7 @@ function History({ save, onBack }: { save: SaveData; onBack: () => void }) {
             {analysis.configurations.map((configuration) => (
               <article className="configuration-card" key={configuration.key}>
                 <span className="mode-pill">{settingsSummary(configuration.settings)}</span>
+                <small>Ruleset {configuration.rulesetVersion}</small>
                 <strong>{configuration.highScore.toLocaleString()} high score</strong>
                 <dl>
                   <div>

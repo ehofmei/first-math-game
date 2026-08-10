@@ -98,6 +98,21 @@ test('game settings and home capsule access remain available after reload', asyn
   await expect(page.getByText('Hard · − × · 20 questions')).toBeVisible();
 });
 
+test('focus moves away from the selected answer when the next question appears', async ({
+  page,
+}) => {
+  await onboard(page);
+  await page.getByRole('button', { name: 'Play now' }).click();
+
+  const equation = page.locator('#equation');
+  const firstEquation = (await equation.textContent()) ?? '';
+  await page.locator('.answer-card').nth(3).click();
+  await expect(equation).not.toHaveText(firstEquation);
+
+  await expect(equation).toBeFocused();
+  await expect(page.locator('.answer-card').nth(3)).not.toBeFocused();
+});
+
 test('history copies a name-free, versioned analysis export', async ({
   page,
   context,
@@ -118,7 +133,7 @@ test('history copies a name-free, versioned analysis export', async ({
   await page.getByRole('button', { name: 'Back home' }).click();
   await page.getByRole('button', { name: 'Your progress' }).click();
   await expect(page.getByRole('heading', { name: 'Play History' })).toBeVisible();
-  await expect(page.getByText('Ruleset 2')).toBeVisible();
+  await expect(page.getByText('Ruleset 3').first()).toBeVisible();
   await page.getByRole('button', { name: 'Copy analysis data' }).click();
   await expect(page.getByText('Copied! You can paste it into the chat.')).toBeVisible();
 
@@ -131,7 +146,7 @@ test('history copies a name-free, versioned analysis export', async ({
   };
   expect(analysis).toMatchObject({
     format: 'number-nook-play-history',
-    exportVersion: 1,
+    exportVersion: 2,
     privacy: { playerNameIncluded: false },
   });
   expect(analysis.sessions).toHaveLength(1);

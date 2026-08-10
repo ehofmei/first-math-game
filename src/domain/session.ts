@@ -1,7 +1,7 @@
 import type { Clock } from './clock';
 import type { GameSettings, OperationId, Problem } from './math';
 
-export const RULESET_VERSION = 2;
+export const RULESET_VERSION = 3;
 
 export interface AnswerRecord {
   problemId: string;

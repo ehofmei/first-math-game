@@ -4,7 +4,12 @@ import { generateSession, type GameSettings } from '../domain/math';
 import { SeededRandom } from '../domain/random';
 import { summarizeSession } from '../domain/session';
 import { applyCompletedSession, createInitialSave, type SaveData } from '../storage/save';
-import { buildPlayHistoryExport, serializePlayHistory, summarizeConfigurations } from './history';
+import {
+  buildPlayHistoryExport,
+  serializePlayHistory,
+  summarizeConfigurations,
+  summarizeRulesets,
+} from './history';
 
 function addRound(
   save: SaveData,
@@ -43,6 +48,7 @@ describe('play history analysis export', () => {
       totalQuestions: 0,
     });
     expect(emptyAnalysis.configurations).toEqual([]);
+    expect(emptyAnalysis.rulesets).toEqual([]);
 
     const withEvents: SaveData = {
       ...empty,
@@ -83,7 +89,7 @@ describe('play history analysis export', () => {
     expect(analysis.currentState.completedRoundCount).toBe(1);
     expect(analysis.overall.totalQuestions).toBe(10);
     expect(analysis.sessions[0]).toMatchObject({
-      rulesetVersion: 2,
+      rulesetVersion: 3,
       seed: 1,
       settings: {
         operations: ['addition', 'subtraction', 'multiplication', 'division'],
@@ -105,7 +111,7 @@ describe('play history analysis export', () => {
     expect(firstQuestion?.scoreAwarded).toEqual(expect.any(Number));
   });
 
-  it('groups comparable settings and keeps different difficulties separate', () => {
+  it('groups comparable settings and keeps different difficulties and rulesets separate', () => {
     const easy: GameSettings = {
       operations: ['addition', 'subtraction'],
       difficulty: 'easy',
@@ -117,12 +123,26 @@ describe('play history analysis export', () => {
     save = addRound(save, { ...easy, operations: [...easy.operations].reverse() }, 2, 0);
     save = addRound(save, hard, 3);
     save = addRound(save, hard, 4, 1);
+    save = {
+      ...save,
+      sessions: [...save.sessions, { ...save.sessions[0]!, id: 'legacy-copy', rulesetVersion: 2 }],
+    };
 
     const groups = summarizeConfigurations(save.sessions);
-    expect(groups).toHaveLength(2);
-    expect(groups.find(({ settings }) => settings.difficulty === 'easy')?.rounds).toBe(2);
+    expect(groups).toHaveLength(3);
+    expect(
+      groups.find(
+        ({ settings, rulesetVersion }) => settings.difficulty === 'easy' && rulesetVersion === 3,
+      )?.rounds,
+    ).toBe(2);
+    expect(groups.find(({ rulesetVersion }) => rulesetVersion === 2)?.rounds).toBe(1);
     expect(groups.find(({ settings }) => settings.difficulty === 'hard')?.rounds).toBe(2);
     expect(groups.every(({ averageScorePerQuestion }) => averageScorePerQuestion > 0)).toBe(true);
+
+    expect(summarizeRulesets(save.sessions)).toMatchObject([
+      { rulesetVersion: 2, rounds: 1, totalQuestions: 10 },
+      { rulesetVersion: 3, rounds: 4, totalQuestions: 40 },
+    ]);
 
     const oddAnswerSession = {
       ...save.sessions[0]!,

@@ -1,4 +1,9 @@
 import type { RandomSource } from './random';
+import {
+  composeMultiplicationDivisionFacts,
+  type ComposedFact,
+  type ComposedOperation,
+} from './composition';
 
 export const OPERATION_IDS = ['addition', 'subtraction', 'multiplication', 'division'] as const;
 export type OperationId = (typeof OPERATION_IDS)[number];
@@ -262,6 +267,50 @@ export function generateDivisionProblem(random: RandomSource, difficulty: Diffic
   );
 }
 
+function createComposedProblem(
+  fact: ComposedFact,
+  difficulty: DifficultyId,
+  random: RandomSource,
+): Problem {
+  const rules = DIFFICULTY_RULES[difficulty];
+  if (fact.operation === 'multiplication') {
+    let left = fact.firstFactor;
+    let right = fact.secondFactor;
+    if (left !== right && random.integer(0, 1) === 1) [left, right] = [right, left];
+    const correctAnswer = left * right;
+    const maximum = Math.max(
+      30,
+      Math.max(...rules.multiplicationTables) * rules.multiplicationFactorMax + 20,
+    );
+    return createProblem(
+      'multiplication',
+      left,
+      right,
+      correctAnswer,
+      fact.skillKey,
+      [left * (right - 1), left * (right + 1), left + right, correctAnswer + right],
+      0,
+      maximum,
+      random,
+    );
+  }
+
+  const divisor = fact.firstFactor;
+  const quotient = fact.secondFactor;
+  const dividend = divisor * quotient;
+  return createProblem(
+    'division',
+    dividend,
+    divisor,
+    quotient,
+    fact.skillKey,
+    [quotient - 1, quotient + 1, quotient + divisor, divisor, dividend - divisor],
+    0,
+    Math.max(30, rules.divisionQuotientMax + Math.max(...rules.divisionTables) + 10),
+    random,
+  );
+}
+
 export function generateProblem(
   operation: OperationId,
   difficulty: DifficultyId,
@@ -289,10 +338,29 @@ export function generateSession(settings: GameSettings, random: RandomSource): P
       (_, index) => operations[index % operations.length]!,
     ),
   );
+  const composedOperations = operationSchedule.filter(
+    (operation): operation is ComposedOperation =>
+      operation === 'multiplication' || operation === 'division',
+  );
+  const composedFacts = composeMultiplicationDivisionFacts(
+    composedOperations,
+    settings.difficulty,
+    DIFFICULTY_RULES[settings.difficulty],
+    random,
+  );
+  let composedIndex = 0;
   const problems: Problem[] = [];
   const used = new Set<string>();
 
   for (const operation of operationSchedule) {
+    if (operation === 'multiplication' || operation === 'division') {
+      const fact = composedFacts[composedIndex++];
+      if (!fact) throw new Error('The composed fact schedule was incomplete.');
+      const problem = createComposedProblem(fact, settings.difficulty, random);
+      used.add(problem.skillKey);
+      problems.push({ ...problem, id: `q${problems.length + 1}:${problem.id}` });
+      continue;
+    }
     let problem = generateProblem(operation, settings.difficulty, random);
     let attempts = 0;
     while (used.has(problem.skillKey) && attempts < 200) {

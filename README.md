@@ -26,7 +26,7 @@ The first playable vertical slice is implemented. It includes onboarding, a star
 
 ## Current status
 
-Milestones 0 and 1 and the first end-to-end slice are in place. Addition, subtraction, multiplication, division, mixed-operation balancing, Easy through Advanced difficulties, and 10–50 question rounds are playable. The automated suite covers the deterministic math and reward rules, save migration and round-trips, real-browser components, the complete player journey, accessibility, phone/tablet layouts, and production offline reloads. Development and play-testing are currently local on a Mac; the site has not yet been deployed.
+Milestones 0 and 1 and the first end-to-end slice are in place. Addition, subtraction, multiplication, division, constrained version 3 multiplication/division composition, Easy through Advanced difficulties, and 10–50 question rounds are playable. The automated suite covers deterministic math and composition rules, rewards, save migration and round-trips, real-browser components, the complete player journey, accessibility, phone/tablet layouts, and production offline reloads. Development and play-testing are currently local on a Mac; the site has not yet been deployed.
 
 ## Run locally
 
@@ -48,4 +48,8 @@ Useful focused commands are documented in the [testing strategy](./docs/TEST_STR
 
 ## Deploy
 
-Pushing to `main` runs verification and builds the app for GitHub Pages. In the repository settings, select **GitHub Actions** as the Pages source once; subsequent successful pushes deploy automatically.
+Before the first deployment, open the repository's **Settings → Pages** page and select **GitHub Actions** under **Build and deployment → Source**. This one-time step creates the Pages site used by the deployment action; without it, `actions/configure-pages` returns a `404 Not Found` error.
+
+GitHub Pages is available for public repositories on GitHub Free. A private repository requires a plan that includes Pages for private repositories, such as GitHub Pro; the published site itself is still public for a personal-account project. If the Pages source control is unavailable for a private repository, make the repository public or use an eligible plan.
+
+After Pages is enabled, pushing to `main` runs verification and deploys the app. The deployment workflow can also be run manually from the Actions tab.

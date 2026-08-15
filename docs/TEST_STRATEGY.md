@@ -237,6 +237,8 @@ Initial critical journeys:
 10. Load an older save against a catalog containing new items.
 11. Results → review all or missed questions → return to results.
 12. History → review a retained round → clear play history without clearing rewards or settings.
+13. Download complete backup → preview import → confirm replacement → reload restored progress.
+14. Restore a complete backup before onboarding on a new device.
 
 Playwright projects should include at minimum:
 
@@ -265,6 +267,7 @@ Good snapshot targets:
 - Gallery partial/complete.
 - Shop.
 - Progress overview.
+- Backup and restore, including invalid-file and ready-to-restore states.
 - Offline/update prompts.
 - State-gallery rarity and component matrices.
 

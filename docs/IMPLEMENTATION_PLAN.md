@@ -11,6 +11,7 @@ Related references:
 - [Problem generation and session composition](./PROBLEM_GENERATION.md)
 - [Addition and subtraction generation](./ADDITION_SUBTRACTION_GENERATION.md)
 - [Round review and play-history retention](./PLAY_HISTORY.md)
+- [Save backup and restore](./SAVE_BACKUP.md)
 
 ## Delivery principles
 
@@ -324,7 +325,7 @@ Folders should be introduced only when needed; this is a target shape, not a req
 - App icons and install metadata.
 - Offline production-preview tests.
 - GitHub Pages workflow.
-- JSON export/import UI.
+- ~~JSON export/import UI.~~ Complete backup download/share and confirmed restore are available on existing and brand-new devices.
 - Initial install and real-device checklists.
 
 ### Acceptance criteria

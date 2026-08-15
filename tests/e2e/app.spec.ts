@@ -79,7 +79,7 @@ test('first launch, game, capsule, gallery, equip, and reload', async ({ page })
   await page.getByRole('button', { name: 'View collection' }).click();
   await expect(page.getByRole('heading', { name: 'Companion Collection' })).toBeVisible();
   await page.getByRole('button', { name: foundName }).click();
-  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
   await expect(page.locator('.home-companion')).toContainText(foundName);
   await expect(page.locator('.home-companion')).toContainText('is ready!');
   await page.reload();
@@ -90,14 +90,14 @@ test('game settings and home capsule access remain available after reload', asyn
   await onboard(page);
   await page.getByRole('button', { name: 'Cat Capsule' }).click();
   await expect(page.getByRole('heading', { name: 'Cat Capsule' })).toBeVisible();
-  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
 
   await page.getByRole('button', { name: 'Change game' }).click();
   await page.getByRole('button', { name: '+ Addition' }).click();
   await page.getByRole('button', { name: '× Multiplication' }).click();
   await page.getByRole('button', { name: 'Hard' }).click();
   await page.getByRole('button', { name: '20' }).click();
-  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
   await expect(page.getByText('Hard · − × · 20 questions')).toBeVisible();
   await page.reload();
   await expect(page.getByText('Hard · − × · 20 questions')).toBeVisible();
@@ -238,6 +238,88 @@ test('history keeps large setup collections compact until expanded', async ({
   await expect(page.locator('.configuration-card')).toHaveCount(6);
 });
 
+test('complete backup downloads and safely replaces existing progress', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'Download behavior is covered once in Chromium.');
+  await onboard(page);
+  await page.evaluate(() => {
+    const key = 'first-math-game:save';
+    const save = JSON.parse(localStorage.getItem(key) ?? '{}') as { coins: number };
+    save.coins = 42;
+    localStorage.setItem(key, JSON.stringify(save));
+  });
+  await page.reload();
+  await page.getByRole('button', { name: 'Backup & restore' }).click();
+
+  const downloadPromise = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Save backup file' }).click();
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/^number-nook-save-\d{4}-\d{2}-\d{2}\.json$/);
+  const backupPath = await download.path();
+  expect(backupPath).not.toBeNull();
+
+  await page.evaluate(() => {
+    const key = 'first-math-game:save';
+    const save = JSON.parse(localStorage.getItem(key) ?? '{}') as {
+      player: { name: string };
+      coins: number;
+    };
+    save.player.name = 'Bea';
+    save.coins = 7;
+    localStorage.setItem(key, JSON.stringify(save));
+  });
+  await page.reload();
+  await page.getByRole('button', { name: 'Backup & restore' }).click();
+
+  await page.getByLabel('Choose backup file').setInputFiles({
+    name: 'not-a-save.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{}'),
+  });
+  await expect(page.getByRole('alert')).toContainText('not a valid Number Nook backup');
+
+  await page.getByLabel('Choose backup file').setInputFiles(backupPath);
+  const preview = page.getByRole('region', { name: 'Backup preview' });
+  await expect(preview).toContainText('Ada');
+  await expect(preview).toContainText('42');
+  expect(
+    await page.evaluate(() => {
+      const save = JSON.parse(localStorage.getItem('first-math-game:save') ?? '{}') as {
+        player: { name: string };
+      };
+      return save.player.name;
+    }),
+  ).toBe('Bea');
+
+  await page.getByRole('button', { name: 'Restore this backup' }).click();
+  await expect(page.getByRole('status')).toHaveText('Backup restored successfully.');
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(page.getByRole('heading', { name: "Ada's Number Nook" })).toBeVisible();
+  await expect(page.getByLabel('42 Paw Coins')).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('heading', { name: "Ada's Number Nook" })).toBeVisible();
+});
+
+test('a backup can be restored on a device before onboarding', async ({ page }) => {
+  await onboard(page);
+  const backup = await page.evaluate<string>('localStorage.getItem("first-math-game:save") ?? ""');
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+
+  await page.getByRole('button', { name: 'Restore a backup' }).click();
+  await expect(page.getByRole('heading', { name: 'Backup & restore' })).toBeVisible();
+  await page.getByLabel('Choose backup file').setInputFiles({
+    name: 'number-nook-save.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(backup),
+  });
+  await page.getByRole('button', { name: 'Restore this backup' }).click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(page.getByRole('heading', { name: "Ada's Number Nook" })).toBeVisible();
+});
+
 test('onboarding, home, history, and setup have no detectable accessibility violations', async ({
   page,
 }) => {
@@ -251,7 +333,12 @@ test('onboarding, home, history, and setup have no detectable accessibility viol
   await page.getByRole('button', { name: 'Your progress' }).click();
   results = await new AxeBuilder({ page }).analyze();
   expect(results.violations).toEqual([]);
-  await page.getByRole('button', { name: 'Back' }).click();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+
+  await page.getByRole('button', { name: 'Backup & restore' }).click();
+  results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations).toEqual([]);
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
 
   await page.getByRole('button', { name: 'Change game' }).click();
   results = await new AxeBuilder({ page }).analyze();
@@ -281,6 +368,13 @@ test('@visual empty history phone layout', async ({ page }, testInfo) => {
   await onboard(page);
   await page.getByRole('button', { name: 'Your progress' }).click();
   await expect(page).toHaveScreenshot('history-empty.png', { fullPage: true });
+});
+
+test('@visual backup phone layout', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'phone', 'This baseline targets the phone viewport.');
+  await onboard(page);
+  await page.getByRole('button', { name: 'Backup & restore' }).click();
+  await expect(page).toHaveScreenshot('backup.png', { fullPage: true });
 });
 
 test('@pwa production build works after the network goes offline', async ({

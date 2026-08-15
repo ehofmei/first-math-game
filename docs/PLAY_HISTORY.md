@@ -65,7 +65,7 @@ Version 1, 2, and 3 saves migrate automatically to schema version 4. If an older
 
 It preserves Paw Coins, the daily coin allowance state, companions, equipped companion, capsule events, player name, and game settings. This makes it useful for removing development play-test results without resetting collection progress.
 
-The repository layer can round-trip a complete save and migrate older save versions, but a player-facing full-save backup/import screen is still pending. When that interface is added, it will be the recovery mechanism for moving all progress to another device. The Play History analysis JSON is an analysis artifact and cannot be imported as a save file.
+The separate [Save backup and restore](./SAVE_BACKUP.md) screen is the recovery mechanism for moving all progress to another device. The Play History analysis JSON is an analysis artifact and cannot be imported as a save file.
 
 ## Verification contract
 

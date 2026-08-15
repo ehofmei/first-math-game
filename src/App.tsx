@@ -47,6 +47,7 @@ type Screen =
   | 'play'
   | 'results'
   | 'review'
+  | 'backup'
   | 'capsule'
   | 'gallery'
   | 'history';
@@ -69,6 +70,7 @@ interface ActiveGame {
 
 const repository = new LocalStorageSaveRepository();
 const clock = new SystemClock();
+const MAX_BACKUP_FILE_BYTES = 5 * 1024 * 1024;
 
 function formatTime(milliseconds: number): string {
   const seconds = Math.max(0, milliseconds) / 1_000;
@@ -99,7 +101,13 @@ function resultHeadline(summary: SessionSummary, previous: readonly SessionSumma
   return 'Another strong practice round!';
 }
 
-function Onboarding({ onComplete }: { onComplete: (name: string, starterId: string) => void }) {
+function Onboarding({
+  onComplete,
+  onRestore,
+}: {
+  onComplete: (name: string, starterId: string) => void;
+  onRestore: () => void;
+}) {
   const starters = getStarterCollectibles();
   const [name, setName] = useState('');
   const [starterId, setStarterId] = useState(starters[0]?.id ?? '');
@@ -159,6 +167,9 @@ function Onboarding({ onComplete }: { onComplete: (name: string, starterId: stri
         <button className="primary-button" type="submit" disabled={!name.trim() || !starterId}>
           Enter Number Nook
         </button>
+        <button className="text-button" type="button" onClick={onRestore}>
+          Restore a backup
+        </button>
       </form>
     </main>
   );
@@ -171,6 +182,7 @@ function Home({
   onGallery,
   onCapsule,
   onHistory,
+  onBackup,
 }: {
   save: SaveData;
   onPlay: () => void;
@@ -178,6 +190,7 @@ function Home({
   onGallery: () => void;
   onCapsule: () => void;
   onHistory: () => void;
+  onBackup: () => void;
 }) {
   const companion = getCollectible(save.equippedCollectibleId);
   const lastSession = save.sessions.at(-1);
@@ -259,6 +272,16 @@ function Home({
             <small>
               {dailyCoinsRemaining(save, clock.today())} of {DAILY_COIN_CAP} coins available today
             </small>
+          </span>
+          <span aria-hidden="true">→</span>
+        </button>
+        <button className="dashboard-card" type="button" onClick={onBackup}>
+          <span className="dashboard-icon" aria-hidden="true">
+            ⇄
+          </span>
+          <span>
+            <strong>Backup &amp; restore</strong>
+            <small>Save progress or move it to another device</small>
           </span>
           <span aria-hidden="true">→</span>
         </button>
@@ -910,6 +933,198 @@ function History({
   );
 }
 
+function BackupRestore({
+  save,
+  onBack,
+  onRestore,
+}: {
+  save: SaveData | null;
+  onBack: () => void;
+  onRestore: (restored: SaveData) => Promise<void>;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [pendingRestore, setPendingRestore] = useState<SaveData | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState('');
+  const [message, setMessage] = useState<{ kind: 'success' | 'error'; text: string } | null>(null);
+  const [restoring, setRestoring] = useState(false);
+
+  const saveBackupFile = async () => {
+    if (!save) return;
+    const generatedAt = new Date().toISOString();
+    const filename = `number-nook-save-${generatedAt.slice(0, 10)}.json`;
+    const file = new File([repository.export(save)], filename, { type: 'application/json' });
+
+    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+      try {
+        await navigator.share({
+          files: [file],
+          title: 'Number Nook backup',
+          text: 'Complete Number Nook progress backup',
+        });
+        setMessage({ kind: 'success', text: 'Backup shared successfully.' });
+        return;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') return;
+      }
+    }
+
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+    setMessage({ kind: 'success', text: 'Backup file saved.' });
+  };
+
+  const selectBackup = async (file: File | undefined) => {
+    setPendingRestore(null);
+    setSelectedFileName(file?.name ?? '');
+    setMessage(null);
+    if (!file) return;
+    if (file.size > MAX_BACKUP_FILE_BYTES) {
+      setMessage({ kind: 'error', text: 'That file is too large to be a Number Nook backup.' });
+      return;
+    }
+    try {
+      setPendingRestore(repository.parseImport(await file.text()));
+    } catch {
+      setMessage({
+        kind: 'error',
+        text: 'That file is not a valid Number Nook backup. Your current progress was not changed.',
+      });
+    }
+  };
+
+  const pendingRoundCount = pendingRestore
+    ? pendingRestore.archivedProgress.overall.rounds + pendingRestore.sessions.length
+    : 0;
+
+  const restoreBackup = async () => {
+    if (!pendingRestore) return;
+    setRestoring(true);
+    try {
+      await onRestore(pendingRestore);
+      setPendingRestore(null);
+      setSelectedFileName('');
+      if (inputRef.current) inputRef.current.value = '';
+      setMessage({ kind: 'success', text: 'Backup restored successfully.' });
+    } catch {
+      setMessage({
+        kind: 'error',
+        text: 'The backup was valid, but this device could not save it. Your current progress was not changed.',
+      });
+    } finally {
+      setRestoring(false);
+    }
+  };
+
+  return (
+    <main className="page-shell backup-page">
+      <header className="page-header">
+        <button className="icon-button" type="button" onClick={onBack} aria-label="Back">
+          ←
+        </button>
+        <div>
+          <span className="eyebrow">Local save tools</span>
+          <h1>Backup &amp; restore</h1>
+          <p>Move complete Number Nook progress between devices without an account.</p>
+        </div>
+      </header>
+
+      <div className="backup-grid">
+        {save && (
+          <section className="panel backup-panel">
+            <div>
+              <h2>Save a backup</h2>
+              <p>
+                This includes the player name, settings, Paw Coins, companions, and complete play
+                progress. Keep the file somewhere safe and private.
+              </p>
+            </div>
+            <button className="primary-button" type="button" onClick={() => void saveBackupFile()}>
+              Save backup file
+            </button>
+          </section>
+        )}
+
+        <section className="panel backup-panel">
+          <div>
+            <h2>Restore a backup</h2>
+            <p>
+              Select a Number Nook save file to preview it. Nothing changes until you confirm the
+              restore.
+            </p>
+          </div>
+          <div className="field-group">
+            <label htmlFor="backup-file">Choose backup file</label>
+            <input
+              ref={inputRef}
+              id="backup-file"
+              className="backup-file-input"
+              type="file"
+              accept=".json,application/json"
+              onChange={(event) => void selectBackup(event.currentTarget.files?.[0])}
+            />
+          </div>
+
+          {pendingRestore && (
+            <section className="backup-preview" aria-label="Backup preview">
+              <span className="eyebrow">Ready to restore</span>
+              <h3>{selectedFileName}</h3>
+              <dl>
+                <div>
+                  <dt>Player</dt>
+                  <dd>{pendingRestore.player.name}</dd>
+                </div>
+                <div>
+                  <dt>Rounds</dt>
+                  <dd>{pendingRoundCount}</dd>
+                </div>
+                <div>
+                  <dt>Paw Coins</dt>
+                  <dd>{pendingRestore.coins}</dd>
+                </div>
+                <div>
+                  <dt>Companions</dt>
+                  <dd>{pendingRestore.ownedCollectibleIds.length}</dd>
+                </div>
+              </dl>
+              <p className="backup-warning">
+                Restoring replaces all progress currently saved on this device.
+              </p>
+              <button
+                className="secondary-button danger-button"
+                type="button"
+                disabled={restoring}
+                onClick={() => void restoreBackup()}
+              >
+                {restoring ? 'Restoring…' : 'Restore this backup'}
+              </button>
+            </section>
+          )}
+
+          {message && (
+            <p
+              className={`backup-message backup-message--${message.kind}`}
+              role={message.kind === 'error' ? 'alert' : 'status'}
+            >
+              {message.text}
+            </p>
+          )}
+        </section>
+      </div>
+
+      <p className="backup-note">
+        Play History analysis files cannot be restored. Choose a file created with{' '}
+        <strong>Save backup file</strong>.
+      </p>
+    </main>
+  );
+}
+
 function Capsule({
   save,
   reward,
@@ -1172,9 +1387,31 @@ export default function App() {
         <p>Opening Number Nook…</p>
       </main>
     );
+  if (screen === 'backup')
+    return (
+      <BackupRestore
+        save={save}
+        onBack={() => setScreen(save ? 'home' : 'onboarding')}
+        onRestore={async (restored) => {
+          await repository.save(restored);
+          if (transitionTimer.current !== null) {
+            window.clearTimeout(transitionTimer.current);
+            transitionTimer.current = null;
+          }
+          setSave(restored);
+          setGame(null);
+          setElapsed(0);
+          setSummary(null);
+          setReview(null);
+          setPreviousSessions([]);
+          setCapsuleReward(undefined);
+        }}
+      />
+    );
   if (!save || screen === 'onboarding')
     return (
       <Onboarding
+        onRestore={() => setScreen('backup')}
         onComplete={(name, starterId) => {
           const next = createInitialSave(name, starterId);
           commitSave(next);
@@ -1299,6 +1536,7 @@ export default function App() {
       onSetup={() => setScreen('setup')}
       onGallery={() => setScreen('gallery')}
       onHistory={() => setScreen('history')}
+      onBackup={() => setScreen('backup')}
       onCapsule={() => {
         setSummary(null);
         setCapsuleReward(undefined);

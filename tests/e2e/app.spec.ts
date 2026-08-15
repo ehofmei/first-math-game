@@ -65,6 +65,7 @@ test('first launch, game, capsule, gallery, equip, and reload', async ({ page })
     page.getByRole('heading', { name: /First score|personal best|practice round/i }),
   ).toBeVisible();
   await expect(page.getByText('100%')).toBeVisible();
+  await expect(page.locator('.coin-tally')).not.toHaveText('+0');
   await page.getByRole('button', { name: 'Review questions' }).click();
   await expect(page.getByRole('heading', { name: 'Review your questions' })).toBeVisible();
   await expect(page.locator('.review-card')).toHaveCount(10);
@@ -72,6 +73,7 @@ test('first launch, game, capsule, gallery, equip, and reload', async ({ page })
   await expect(page.getByRole('button', { name: 'Review questions' })).toBeVisible();
   await page.getByRole('button', { name: 'Open a capsule' }).click();
   await page.getByRole('button', { name: 'Open capsule' }).click();
+  await expect(page.getByRole('heading', { name: 'Opening your capsule…' })).toBeVisible();
   await expect(page.getByRole('heading', { name: /You found/ })).toBeVisible();
   const foundName = ((await page.getByRole('heading', { name: /You found/ }).textContent()) ?? '')
     .replace('You found ', '')
@@ -90,6 +92,10 @@ test('game settings and home capsule access remain available after reload', asyn
   await onboard(page);
   await page.getByRole('button', { name: 'Cat Capsule' }).click();
   await expect(page.getByRole('heading', { name: 'Cat Capsule' })).toBeVisible();
+  const unavailableCapsule = page.getByRole('button', { name: 'Need 60 more coins' });
+  await expect(unavailableCapsule).toHaveAttribute('aria-disabled', 'true');
+  await unavailableCapsule.click({ force: true });
+  await expect(page.getByRole('heading', { name: 'A new friend is waiting' })).toBeVisible();
   await page.getByRole('button', { name: 'Back', exact: true }).click();
 
   await page.getByRole('button', { name: 'Change game' }).click();
@@ -101,6 +107,31 @@ test('game settings and home capsule access remain available after reload', asyn
   await expect(page.getByText('Hard · − × · 20 questions')).toBeVisible();
   await page.reload();
   await expect(page.getByText('Hard · − × · 20 questions')).toBeVisible();
+});
+
+test('sound preference persists and the home control can recover from zero volume', async ({
+  page,
+}) => {
+  await onboard(page);
+
+  await page.getByRole('button', { name: 'Mute sound effects' }).click();
+  await expect(page.getByRole('button', { name: 'Turn on sound effects' })).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('button', { name: 'Turn on sound effects' })).toBeVisible();
+
+  await page.evaluate(() => {
+    localStorage.setItem(
+      'first-math-game:audio-preferences',
+      JSON.stringify({ effectsEnabled: true, effectsVolume: 0 }),
+    );
+  });
+  await page.reload();
+  await page.getByRole('button', { name: 'Turn on sound effects' }).click();
+  await expect(page.getByRole('button', { name: 'Mute sound effects' })).toBeVisible();
+  const serialized = await page.evaluate(
+    () => localStorage.getItem('first-math-game:audio-preferences') ?? '{}',
+  );
+  expect(JSON.parse(serialized) as unknown).toEqual({ effectsEnabled: true, effectsVolume: 0.4 });
 });
 
 test('focus moves away from the selected answer when the next question appears', async ({
@@ -115,6 +146,7 @@ test('focus moves away from the selected answer when the next question appears',
   await expect(equation).not.toHaveText(firstEquation);
 
   await expect(equation).toBeFocused();
+  await expect(equation).toHaveCSS('outline-style', 'none');
   await expect(page.locator('.answer-card').nth(3)).not.toBeFocused();
 });
 

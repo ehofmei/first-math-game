@@ -9,6 +9,9 @@ export function StateGallery() {
         <div>
           <span className="eyebrow">Development only</span>
           <h1>Interface state gallery</h1>
+          <p>
+            Looking for audio? Open the <a href="?dev=sounds">Sound Lab</a>.
+          </p>
         </div>
       </header>
 

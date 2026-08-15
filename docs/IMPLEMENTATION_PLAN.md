@@ -12,6 +12,7 @@ Related references:
 - [Addition and subtraction generation](./ADDITION_SUBTRACTION_GENERATION.md)
 - [Round review and play-history retention](./PLAY_HISTORY.md)
 - [Save backup and restore](./SAVE_BACKUP.md)
+- [Sound effects and Sound Lab](./AUDIO.md)
 
 ## Delivery principles
 
@@ -353,7 +354,7 @@ Add one independently verified slice at a time:
 10. Direct-purchase shop and tuned rarity economy.
 11. Improvement Duel after at least five comparable sessions.
 12. Final collectible art and expanded repository packs.
-13. Optional speech and sound.
+13. Optional speech and sound. The synthesized contextual-effects pass and development Sound Lab are complete; subjective cue refinement, music, and spoken problems remain future work.
 
 Each operation must ship with its generator invariants, distractor rules, difficulty tests, UI behavior, progress aggregation, and end-to-end coverage. “Adding the operation” is not complete when only the equation generator exists.
 

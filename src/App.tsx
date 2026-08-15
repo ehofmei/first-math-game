@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { buildPlayHistoryExport, serializePlayHistory } from './analytics/history';
+import { GAME_AUDIO_CUES } from './audio/cues';
+import {
+  DEFAULT_AUDIO_PREFERENCES,
+  LocalStorageAudioPreferencesRepository,
+  type AudioPreferences,
+} from './audio/preferences';
+import { useAudioPlayer } from './audio/useAudioPlayer';
 import { AnswerCard } from './components/AnswerCard';
 import { CollectibleCard } from './components/CollectibleCard';
 import { catalog, getCollectible, getStarterCollectibles } from './content/catalog';
@@ -30,6 +37,7 @@ import {
   type SessionSummary,
 } from './domain/session';
 import { StateGallery } from './dev/StateGallery';
+import { SoundLab } from './dev/SoundLab';
 import {
   applyCompletedSession,
   clearPlayHistory,
@@ -69,6 +77,7 @@ interface ActiveGame {
 }
 
 const repository = new LocalStorageSaveRepository();
+const audioPreferencesRepository = new LocalStorageAudioPreferencesRepository();
 const clock = new SystemClock();
 const MAX_BACKUP_FILE_BYTES = 5 * 1024 * 1024;
 
@@ -101,12 +110,28 @@ function resultHeadline(summary: SessionSummary, previous: readonly SessionSumma
   return 'Another strong practice round!';
 }
 
+function SoundToggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
+  return (
+    <button
+      className="icon-button sound-toggle"
+      type="button"
+      onClick={onToggle}
+      aria-label={enabled ? 'Mute sound effects' : 'Turn on sound effects'}
+      title={enabled ? 'Mute sound effects' : 'Turn on sound effects'}
+    >
+      <span aria-hidden="true">{enabled ? '🔊' : '🔇'}</span>
+    </button>
+  );
+}
+
 function Onboarding({
   onComplete,
   onRestore,
+  onStarterSelect,
 }: {
   onComplete: (name: string, starterId: string) => void;
   onRestore: () => void;
+  onStarterSelect: () => void;
 }) {
   const starters = getStarterCollectibles();
   const [name, setName] = useState('');
@@ -158,7 +183,10 @@ function Onboarding({
                 collectible={starter}
                 owned
                 selected={starterId === starter.id}
-                onSelect={() => setStarterId(starter.id)}
+                onSelect={() => {
+                  setStarterId(starter.id);
+                  onStarterSelect();
+                }}
               />
             ))}
           </div>
@@ -183,6 +211,8 @@ function Home({
   onCapsule,
   onHistory,
   onBackup,
+  audioPreferences,
+  onToggleAudio,
 }: {
   save: SaveData;
   onPlay: () => void;
@@ -191,6 +221,8 @@ function Home({
   onCapsule: () => void;
   onHistory: () => void;
   onBackup: () => void;
+  audioPreferences: AudioPreferences;
+  onToggleAudio: () => void;
 }) {
   const companion = getCollectible(save.equippedCollectibleId);
   const lastSession = save.sessions.at(-1);
@@ -202,9 +234,15 @@ function Home({
           <span className="eyebrow">Welcome back</span>
           <h1>{save.player.name}'s Number Nook</h1>
         </div>
-        <div className="coin-pill" aria-label={`${save.coins} Paw Coins`}>
-          <span>🐾</span>
-          {save.coins}
+        <div className="home-status">
+          <SoundToggle
+            enabled={audioPreferences.effectsEnabled && audioPreferences.effectsVolume > 0}
+            onToggle={onToggleAudio}
+          />
+          <div className="coin-pill" aria-label={`${save.coins} Paw Coins`}>
+            <span>🐾</span>
+            {save.coins}
+          </div>
         </div>
       </header>
 
@@ -394,11 +432,15 @@ function Play({
   elapsed,
   onAnswer,
   onExit,
+  audioPreferences,
+  onToggleAudio,
 }: {
   game: ActiveGame;
   elapsed: number;
   onAnswer: (answer: number) => void;
   onExit: () => void;
+  audioPreferences: AudioPreferences;
+  onToggleAudio: () => void;
 }) {
   const problem = game.problems[game.index];
   const equationRef = useRef<HTMLHeadingElement>(null);
@@ -426,8 +468,14 @@ function Play({
             <span style={{ width: `${((game.index + 1) / game.problems.length) * 100}%` }} />
           </div>
         </div>
-        <div className="timer-pill" aria-label={`Elapsed time ${formatTime(elapsed)}`}>
-          ◷ {formatTime(elapsed)}
+        <div className="game-tools">
+          <SoundToggle
+            enabled={audioPreferences.effectsEnabled && audioPreferences.effectsVolume > 0}
+            onToggle={onToggleAudio}
+          />
+          <div className="timer-pill" aria-label={`Elapsed time ${formatTime(elapsed)}`}>
+            ◷ {formatTime(elapsed)}
+          </div>
         </div>
       </header>
 
@@ -486,6 +534,7 @@ function Results({
   onCapsule,
   onReview,
   dailyRemaining,
+  onCoinsPresented,
 }: {
   summary: SessionSummary;
   previous: readonly SessionSummary[];
@@ -494,7 +543,36 @@ function Results({
   onCapsule: () => void;
   onReview: () => void;
   dailyRemaining: number;
+  onCoinsPresented: () => void;
 }) {
+  const [visibleCoins, setVisibleCoins] = useState(0);
+
+  useEffect(() => {
+    if (summary.coinsEarned <= 0) return;
+
+    let interval: number | undefined;
+    const delay = window.setTimeout(() => {
+      onCoinsPresented();
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        setVisibleCoins(summary.coinsEarned);
+        return;
+      }
+
+      const steps = Math.min(6, summary.coinsEarned);
+      let step = 0;
+      interval = window.setInterval(() => {
+        step += 1;
+        setVisibleCoins(Math.ceil((summary.coinsEarned * step) / steps));
+        if (step >= steps && interval !== undefined) window.clearInterval(interval);
+      }, 75);
+    }, 650);
+
+    return () => {
+      window.clearTimeout(delay);
+      if (interval !== undefined) window.clearInterval(interval);
+    };
+  }, [onCoinsPresented, summary.coinsEarned, summary.id]);
+
   return (
     <main className="page-shell narrow-page results-page">
       <section className="celebration-card">
@@ -527,7 +605,9 @@ function Results({
         </article>
         <article className="coin-result">
           <span>Paw Coins</span>
-          <strong>+{summary.coinsEarned}</strong>
+          <strong key={visibleCoins} className="coin-tally">
+            +{visibleCoins}
+          </strong>
           <small>
             {dailyRemaining > 0
               ? `${dailyRemaining} available today`
@@ -1128,12 +1208,14 @@ function BackupRestore({
 function Capsule({
   save,
   reward,
+  opening,
   onOpen,
   onGallery,
   onBack,
 }: {
   save: SaveData;
   reward: CollectibleDefinition | null | undefined;
+  opening: boolean;
   onOpen: () => void;
   onGallery: () => void;
   onBack: () => void;
@@ -1142,7 +1224,13 @@ function Capsule({
   return (
     <main className="page-shell narrow-page capsule-page">
       <header className="page-header">
-        <button className="icon-button" type="button" onClick={onBack} aria-label="Back">
+        <button
+          className="icon-button"
+          type="button"
+          onClick={onBack}
+          aria-label="Back"
+          disabled={opening}
+        >
           ←
         </button>
         <div>
@@ -1154,7 +1242,9 @@ function Capsule({
           {save.coins}
         </div>
       </header>
-      <section className={`capsule-machine ${reward ? 'capsule-machine--open' : ''}`}>
+      <section
+        className={`capsule-machine ${reward ? 'capsule-machine--open' : ''} ${opening ? 'capsule-machine--opening' : ''}`}
+      >
         {reward ? (
           <div className="reveal-card" aria-live="polite">
             <span className="reveal-burst" aria-hidden="true">
@@ -1168,6 +1258,14 @@ function Capsule({
             <button className="primary-button" type="button" onClick={onGallery}>
               View collection
             </button>
+          </div>
+        ) : opening ? (
+          <div className="capsule-opening" aria-live="polite">
+            <div className="capsule-orb" aria-hidden="true">
+              <span>✦</span>
+            </div>
+            <h2>Opening your capsule…</h2>
+            <p>Something new is about to appear!</p>
           </div>
         ) : (
           <>
@@ -1184,7 +1282,8 @@ function Capsule({
               className="primary-button"
               type="button"
               onClick={onOpen}
-              disabled={save.coins < CAPSULE_COST || complete}
+              disabled={complete}
+              aria-disabled={save.coins < CAPSULE_COST || complete}
             >
               {save.coins < CAPSULE_COST && !complete
                 ? `Need ${CAPSULE_COST - save.coins} more coins`
@@ -1254,8 +1353,9 @@ function Gallery({
 }
 
 export default function App() {
-  const showStateGallery =
-    import.meta.env.DEV && new URLSearchParams(location.search).get('dev') === 'states';
+  const developmentView = import.meta.env.DEV
+    ? new URLSearchParams(location.search).get('dev')
+    : null;
   const [save, setSave] = useState<SaveData | null | undefined>(undefined);
   const [screen, setScreen] = useState<Screen>('home');
   const [game, setGame] = useState<ActiveGame | null>(null);
@@ -1266,7 +1366,37 @@ export default function App() {
   const [capsuleReward, setCapsuleReward] = useState<CollectibleDefinition | null | undefined>(
     undefined,
   );
+  const [capsuleOpening, setCapsuleOpening] = useState(false);
+  const [audioPreferences, setAudioPreferences] = useState(() => audioPreferencesRepository.load());
+  const { playCue } = useAudioPlayer(audioPreferences);
   const transitionTimer = useRef<number | null>(null);
+  const capsuleTimer = useRef<number | null>(null);
+
+  const clearCapsuleTimer = useCallback(() => {
+    if (capsuleTimer.current !== null) {
+      window.clearTimeout(capsuleTimer.current);
+      capsuleTimer.current = null;
+    }
+  }, []);
+
+  const toggleAudio = useCallback(() => {
+    setAudioPreferences((current) => {
+      const isAudible = current.effectsEnabled && current.effectsVolume > 0;
+      const next = {
+        ...current,
+        effectsEnabled: !isAudible,
+        effectsVolume:
+          !isAudible && current.effectsVolume === 0
+            ? DEFAULT_AUDIO_PREFERENCES.effectsVolume
+            : current.effectsVolume,
+      };
+      try {
+        return audioPreferencesRepository.save(next);
+      } catch {
+        return next;
+      }
+    });
+  }, []);
 
   useEffect(() => {
     void repository.load().then((loaded) => {
@@ -1275,6 +1405,7 @@ export default function App() {
     });
     return () => {
       if (transitionTimer.current !== null) window.clearTimeout(transitionTimer.current);
+      if (capsuleTimer.current !== null) window.clearTimeout(capsuleTimer.current);
     };
   }, []);
 
@@ -1291,6 +1422,7 @@ export default function App() {
 
   const startGame = useCallback(() => {
     if (!save) return;
+    void playCue(GAME_AUDIO_CUES.roundStart);
     const seed = createRandomSeed();
     const now = performance.now();
     setGame({
@@ -1307,8 +1439,9 @@ export default function App() {
     setSummary(null);
     setReview(null);
     setCapsuleReward(undefined);
+    setCapsuleOpening(false);
     setScreen('play');
-  }, [save]);
+  }, [playCue, save]);
 
   const chooseAnswer = useCallback(
     (selectedAnswer: number) => {
@@ -1329,6 +1462,9 @@ export default function App() {
         responseMs: Math.max(0, performance.now() - game.questionStartedAt),
       };
       const nextAnswers = [...game.answers, answer];
+      void playCue(
+        answer.correct ? GAME_AUDIO_CUES.correctAnswer : GAME_AUDIO_CUES.incorrectAnswer,
+      );
       setGame({
         ...game,
         answers: nextAnswers,
@@ -1353,6 +1489,7 @@ export default function App() {
           setSummary(storedSummary);
           setGame(null);
           setScreen('results');
+          void playCue(GAME_AUDIO_CUES.roundComplete);
         } else {
           setGame({
             ...game,
@@ -1365,7 +1502,7 @@ export default function App() {
         }
       }, answerFeedbackDelay(answer.correct));
     },
-    [commitSave, game, save],
+    [commitSave, game, playCue, save],
   );
 
   useEffect(() => {
@@ -1379,7 +1516,8 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKey);
   }, [chooseAnswer, game, screen]);
 
-  if (showStateGallery) return <StateGallery />;
+  if (developmentView === 'states') return <StateGallery />;
+  if (developmentView === 'sounds') return <SoundLab />;
   if (save === undefined)
     return (
       <main className="loading-screen">
@@ -1405,6 +1543,8 @@ export default function App() {
           setReview(null);
           setPreviousSessions([]);
           setCapsuleReward(undefined);
+          setCapsuleOpening(false);
+          clearCapsuleTimer();
         }}
       />
     );
@@ -1412,6 +1552,7 @@ export default function App() {
     return (
       <Onboarding
         onRestore={() => setScreen('backup')}
+        onStarterSelect={() => void playCue(GAME_AUDIO_CUES.starterSelected)}
         onComplete={(name, starterId) => {
           const next = createInitialSave(name, starterId);
           commitSave(next);
@@ -1435,6 +1576,8 @@ export default function App() {
         game={game}
         elapsed={elapsed}
         onAnswer={chooseAnswer}
+        audioPreferences={audioPreferences}
+        onToggleAudio={toggleAudio}
         onExit={() => {
           setGame(null);
           setScreen('home');
@@ -1453,8 +1596,11 @@ export default function App() {
           setScreen('review');
         }}
         dailyRemaining={dailyCoinsRemaining(save, clock.today())}
+        onCoinsPresented={() => void playCue(GAME_AUDIO_CUES.coinsEarned)}
         onCapsule={() => {
+          clearCapsuleTimer();
           setCapsuleReward(undefined);
+          setCapsuleOpening(false);
           setScreen('capsule');
         }}
       />
@@ -1488,8 +1634,13 @@ export default function App() {
       <Capsule
         save={save}
         reward={capsuleReward}
+        opening={capsuleOpening}
         onOpen={() => {
-          if (save.coins < CAPSULE_COST) return;
+          if (capsuleOpening) return;
+          if (save.coins < CAPSULE_COST) {
+            void playCue(GAME_AUDIO_CUES.unavailableAction);
+            return;
+          }
           const reward = chooseCapsuleReward(
             catalog.collectibles,
             save.ownedCollectibleIds,
@@ -1515,7 +1666,15 @@ export default function App() {
             ].slice(-500),
           };
           commitSave(next);
-          setCapsuleReward(reward);
+          setCapsuleReward(undefined);
+          setCapsuleOpening(true);
+          void playCue(GAME_AUDIO_CUES.capsuleReveal);
+          clearCapsuleTimer();
+          capsuleTimer.current = window.setTimeout(() => {
+            setCapsuleReward(reward);
+            setCapsuleOpening(false);
+            capsuleTimer.current = null;
+          }, 760);
         }}
         onGallery={() => setScreen('gallery')}
         onBack={() => setScreen(summary ? 'results' : 'home')}
@@ -1525,7 +1684,10 @@ export default function App() {
     return (
       <Gallery
         save={save}
-        onEquip={(id) => commitSave({ ...save, equippedCollectibleId: id })}
+        onEquip={(id) => {
+          if (id !== save.equippedCollectibleId) void playCue(GAME_AUDIO_CUES.companionEquipped);
+          commitSave({ ...save, equippedCollectibleId: id });
+        }}
         onBack={() => setScreen('home')}
       />
     );
@@ -1537,9 +1699,13 @@ export default function App() {
       onGallery={() => setScreen('gallery')}
       onHistory={() => setScreen('history')}
       onBackup={() => setScreen('backup')}
+      audioPreferences={audioPreferences}
+      onToggleAudio={toggleAudio}
       onCapsule={() => {
+        clearCapsuleTimer();
         setSummary(null);
         setCapsuleReward(undefined);
+        setCapsuleOpening(false);
         setScreen('capsule');
       }}
     />

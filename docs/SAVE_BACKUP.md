@@ -13,6 +13,8 @@ A save backup includes:
 - Retained detailed rounds and archived lifetime progress.
 - Save schema version for validation and migration.
 
+Sound-effects enabled/disabled and volume are device-output preferences, so they remain on the current device and are not included in a progress backup. A restored player inherits the destination device's existing audio preference.
+
 Because the backup contains the local player name and complete progress, it should be treated as a private file. The app does not upload it automatically.
 
 On platforms that support sharing files, **Save backup file** opens the system share sheet. Other browsers download a file named `number-nook-save-YYYY-MM-DD.json`.

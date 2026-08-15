@@ -14,6 +14,7 @@ The first playable vertical slice is implemented. It includes onboarding, a star
 - [Balance analysis](./docs/BALANCE_ANALYSIS.md) — play-history export fields, comparison workflow, simulation strategy, and controls for stable tuning.
 - [Round review and history retention](./docs/PLAY_HISTORY.md) — question review, bounded detailed history, lifetime aggregates, migration, exports, and clearing test data.
 - [Save backup and restore](./docs/SAVE_BACKUP.md) — complete local backup contents, safe import confirmation, schema migration, and analysis-export separation.
+- [Sound effects and Sound Lab](./docs/AUDIO.md) — synthesized cue architecture, current gameplay wiring, device settings, listening workflow, and future music options.
 - [Problem generation](./docs/PROBLEM_GENERATION.md) — constrained-random session composition, difficulty bands, variety limits, versioning, and acceptance criteria.
 - [Addition and subtraction generation](./docs/ADDITION_SUBTRACTION_GENERATION.md) — carrying, borrowing, identity, negative-answer, and variety rules introduced in ruleset version 4.
 
@@ -29,7 +30,7 @@ The first playable vertical slice is implemented. It includes onboarding, a star
 
 ## Current status
 
-Milestones 0 and 1 and the first end-to-end slice are in place. Addition, subtraction, multiplication, division, constrained version 3 multiplication/division composition, constrained version 4 addition/subtraction composition, the version 5 signed-distractor correction, the version 6 Advanced short-round correction, Easy through Advanced difficulties, and 10–50 question rounds are playable. Completed rounds can be reviewed question by question, while the newest 30 rounds retain full detail and older rounds remain in compact lifetime statistics. Complete progress can be backed up and restored on an existing or brand-new device. The automated suite covers deterministic math and composition rules, rewards, save migration and round-trips, history retention, real-browser components, the complete player journey, accessibility, phone/tablet layouts, and production offline reloads. The PWA is deployed through GitHub Pages while active play-testing continues.
+Milestones 0 and 1 and the first end-to-end slice are in place. Addition, subtraction, multiplication, division, constrained version 3 multiplication/division composition, constrained version 4 addition/subtraction composition, the version 5 signed-distractor correction, the version 6 Advanced short-round correction, Easy through Advanced difficulties, and 10–50 question rounds are playable. Completed rounds can be reviewed question by question, while the newest 30 rounds retain full detail and older rounds remain in compact lifetime statistics. Complete progress can be backed up and restored on an existing or brand-new device. Synthesized cues now accompany round launch, answers, results coins, capsule opening, unavailable capsules, and companion changes; a development Sound Lab supports detailed experimentation and copyable recipes. The automated suite covers deterministic math and composition rules, rewards, save migration and round-trips, history retention, audio scheduling and controls, real-browser components, the complete player journey, accessibility, phone/tablet layouts, and production offline reloads. The PWA is deployed through GitHub Pages while active play-testing continues.
 
 ## Run locally
 
@@ -47,7 +48,7 @@ npx playwright install chromium
 npm run verify
 ```
 
-Useful focused commands are documented in the [testing strategy](./docs/TEST_STRATEGY.md#standard-commands). The development-only state gallery is available at `/?dev=states`.
+Useful focused commands are documented in the [testing strategy](./docs/TEST_STRATEGY.md#standard-commands). The development-only state gallery is available at `/?dev=states`, and the Sound Lab is available at `/?dev=sounds`.
 
 ## Deploy
 

@@ -39,6 +39,7 @@ Testing is divided by risk rather than forcing all behavior through one tool.
 | Component interaction | Real-browser component tests |
 | Complete player journeys | Playwright end-to-end tests |
 | Layout and appearance | State gallery, visual snapshots, direct inspection |
+| Sound effects | Pure cue/player tests, real-browser controls, physical-device listening |
 | Accessibility | axe-core, semantic interaction tests, manual review |
 | Offline and update behavior | Production-preview PWA tests and real devices |
 | Engagement and comprehension | Observed play-testing |
@@ -129,6 +130,8 @@ The gallery serves three purposes:
 3. Direct reproduction of rare states that would otherwise require extensive setup.
 
 It is excluded from normal production navigation and contains no privileged production behavior.
+
+The separate development Sound Lab at `/?dev=sounds` exposes every synthesized cue, its duration and building blocks, shared mute and volume controls, an aligned pitch/length/intensity/attack/noise/pan and waveform playground, repeat and contextual sequence tests, copyable recipes, and alternatives not yet wired into the game. It provides reproducible listening targets without requiring a player to repeatedly manufacture a particular game or reward state.
 
 ## Test layers
 
@@ -344,6 +347,8 @@ Before a milestone is called device-ready, run the checklist on at least one cur
 - Import a save file.
 - Verify touch target comfort and accidental-tap resistance.
 - Check sound/mute and, when implemented, speech pronunciation.
+- Compare every in-game cue at low and normal device volume; listen for harshness, startling transients, repetition fatigue, and whether incorrect feedback feels neutral.
+- Confirm the first cue plays only after a tap, sound remains muted after relaunch, and toggling sound during a round does not interrupt play.
 - Observe performance on the oldest supported device available.
 
 These checks require a person with the physical device. Browser emulation reduces risk but does not replace them.

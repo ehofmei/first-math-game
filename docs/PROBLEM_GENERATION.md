@@ -6,11 +6,12 @@ Number Nook uses seeded randomness so a saved round can be reproduced. Seeded ra
 
 The target design is **constrained randomization**. Questions remain unpredictable, but a deterministic session composer selects them within explicit difficulty, variety, and composition rules.
 
-This document specifies the first composition revision. It is intentionally limited to multiplication and division because local play-testing exposed clear problems there. Addition and subtraction keep their current number-range rules and duplicate prevention until carrying, borrowing, and signed-number bands are designed separately.
+This document specifies the multiplication/division composer introduced in ruleset version 3. The ruleset version 4 addition/subtraction composer is specified separately in [Addition and subtraction generation](./ADDITION_SUBTRACTION_GENERATION.md). Together, the two composers cover every initial operation while preserving one balanced operation schedule.
 
 Related references:
 
 - [Balance analysis](./BALANCE_ANALYSIS.md)
+- [Addition and subtraction generation](./ADDITION_SUBTRACTION_GENERATION.md)
 - [Testing strategy](./TEST_STRATEGY.md)
 - [Research and product design](../DESIGN_RESEARCH.md)
 
@@ -70,6 +71,8 @@ For a limit expressed “per 10,” use:
 maximum = ceil(relevant question count × limit / 10)
 minimum = floor(relevant question count × target / 10)
 ```
+
+Ruleset version 6 uses the nearest whole question for the Advanced focus minimum. This only changes short mixed rounds whose per-operation slot count would otherwise round a 60% target too far downward; other difficulties retain the original floor rule.
 
 This makes the rules meaningful in mixed rounds containing only a few multiplication or division questions.
 
@@ -138,8 +141,8 @@ The first revision does not:
 - Adapt selection to a player's saved accuracy or response time.
 - Immediately reinsert a missed question into the same scored round.
 - Change scoring, Paw Coins, answer-feedback timing, or distractor formulas.
-- Change addition or subtraction ranges.
-- Add carrying/borrowing classifications.
+- Change the version 3 multiplication/division ranges.
+- Define addition/subtraction carrying, borrowing, or signed-answer rules; those arrived later in ruleset version 4.
 - Claim that initial quotas are final educational calibration.
 
 Adaptive practice is a later layer. It should alter weights within safe composition limits, not bypass those limits. A weak fact may receive a higher chance in later rounds, but should not dominate a session or repeatedly surprise the player without review.
@@ -147,6 +150,8 @@ Adaptive practice is a later layer. It should alter weights within safe composit
 ## Versioning and history
 
 Implementing this specification increments the game ruleset from version 2 to version 3. The save schema does not need to change because the stored session shape already includes the seed, settings, operands, choices, answers, and ruleset version.
+
+Ruleset version 6 leaves the version 3 multiplication/division categories and limits intact, but uses nearest-question rounding for Advanced focus minimums in short mixed rounds. This prevents four separately floored operation quotas from reducing a ten-question Advanced mixed round to only four focus questions.
 
 Balance exports and on-screen configuration summaries must group by all of:
 

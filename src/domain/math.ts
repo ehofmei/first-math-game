@@ -1,5 +1,10 @@
 import type { RandomSource } from './random';
 import {
+  composeAdditionSubtractionFacts,
+  type ComposedAdditiveFact,
+  type ComposedAdditiveOperation,
+} from './additiveComposition';
+import {
   composeMultiplicationDivisionFacts,
   type ComposedFact,
   type ComposedOperation,
@@ -130,6 +135,7 @@ function buildChoices(
   minimum: number,
   maximum: number,
   random: RandomSource,
+  avoidSignedPairs = false,
 ): number[] {
   const candidates = new Set<number>();
   const add = (candidate: number) => {
@@ -137,7 +143,10 @@ function buildChoices(
       Number.isInteger(candidate) &&
       candidate >= minimum &&
       candidate <= maximum &&
-      candidate !== correctAnswer
+      candidate !== correctAnswer &&
+      (!avoidSignedPairs ||
+        candidate === 0 ||
+        (candidate !== -correctAnswer && !candidates.has(-candidate)))
     ) {
       candidates.add(candidate);
     }
@@ -166,8 +175,16 @@ function createProblem(
   minimum: number,
   maximum: number,
   random: RandomSource,
+  avoidSignedPairs = false,
 ): Problem {
-  const choices = buildChoices(correctAnswer, plausible, minimum, maximum, random);
+  const choices = buildChoices(
+    correctAnswer,
+    plausible,
+    minimum,
+    maximum,
+    random,
+    avoidSignedPairs,
+  );
   return {
     id: `${operation}:${left}:${right}`,
     operation,
@@ -178,6 +195,40 @@ function createProblem(
     correctChoiceIndex: choices.indexOf(correctAnswer),
     skillKey,
   };
+}
+
+function additionDistractors(left: number, right: number, correctAnswer: number): number[] {
+  return [
+    correctAnswer - 1,
+    correctAnswer + 1,
+    left - right,
+    correctAnswer - 10,
+    correctAnswer + 10,
+  ];
+}
+
+function subtractionWithoutBorrow(left: number, right: number): number {
+  let first = left;
+  let second = right;
+  let place = 1;
+  let result = 0;
+  while (first > 0 || second > 0) {
+    result += Math.abs((first % 10) - (second % 10)) * place;
+    first = Math.floor(first / 10);
+    second = Math.floor(second / 10);
+    place *= 10;
+  }
+  return left >= right ? result : -result;
+}
+
+function subtractionDistractors(left: number, right: number, correctAnswer: number): number[] {
+  return [
+    correctAnswer - 1,
+    correctAnswer + 1,
+    right - left,
+    left + right,
+    subtractionWithoutBorrow(left, right),
+  ];
 }
 
 export function generateAdditionProblem(
@@ -194,7 +245,7 @@ export function generateAdditionProblem(
     right,
     correctAnswer,
     additionSkillKey(left, right),
-    [correctAnswer - 1, correctAnswer + 1, left - right, left + right + 10],
+    additionDistractors(left, right, correctAnswer),
     0,
     rules.additionSumMax + 100,
     random,
@@ -217,10 +268,45 @@ export function generateSubtractionProblem(
     right,
     correctAnswer,
     `subtraction:${left}−${right}`,
-    [correctAnswer - 1, correctAnswer + 1, right - left, left + right],
+    subtractionDistractors(left, right, correctAnswer),
     minimum,
     rules.subtractionOperandMax * 2,
     random,
+    rules.allowNegativeSubtraction,
+  );
+}
+
+function createComposedAdditiveProblem(
+  fact: ComposedAdditiveFact,
+  difficulty: DifficultyId,
+  random: RandomSource,
+): Problem {
+  const rules = DIFFICULTY_RULES[difficulty];
+  if (fact.operation === 'addition') {
+    return createProblem(
+      'addition',
+      fact.left,
+      fact.right,
+      fact.correctAnswer,
+      fact.skillKey,
+      additionDistractors(fact.left, fact.right, fact.correctAnswer),
+      0,
+      rules.additionSumMax + 100,
+      random,
+    );
+  }
+
+  return createProblem(
+    'subtraction',
+    fact.left,
+    fact.right,
+    fact.correctAnswer,
+    fact.skillKey,
+    subtractionDistractors(fact.left, fact.right, fact.correctAnswer),
+    rules.allowNegativeSubtraction ? -rules.subtractionOperandMax : 0,
+    rules.subtractionOperandMax * 2,
+    random,
+    rules.allowNegativeSubtraction,
   );
 }
 
@@ -338,6 +424,16 @@ export function generateSession(settings: GameSettings, random: RandomSource): P
       (_, index) => operations[index % operations.length]!,
     ),
   );
+  const composedAdditiveOperations = operationSchedule.filter(
+    (operation): operation is ComposedAdditiveOperation =>
+      operation === 'addition' || operation === 'subtraction',
+  );
+  const composedAdditiveFacts = composeAdditionSubtractionFacts(
+    composedAdditiveOperations,
+    settings.difficulty,
+    DIFFICULTY_RULES[settings.difficulty],
+    random,
+  );
   const composedOperations = operationSchedule.filter(
     (operation): operation is ComposedOperation =>
       operation === 'multiplication' || operation === 'division',
@@ -348,11 +444,20 @@ export function generateSession(settings: GameSettings, random: RandomSource): P
     DIFFICULTY_RULES[settings.difficulty],
     random,
   );
+  let composedAdditiveIndex = 0;
   let composedIndex = 0;
   const problems: Problem[] = [];
   const used = new Set<string>();
 
   for (const operation of operationSchedule) {
+    if (operation === 'addition' || operation === 'subtraction') {
+      const fact = composedAdditiveFacts[composedAdditiveIndex++];
+      if (!fact) throw new Error('The composed addition/subtraction schedule was incomplete.');
+      const problem = createComposedAdditiveProblem(fact, settings.difficulty, random);
+      used.add(problem.skillKey);
+      problems.push({ ...problem, id: `q${problems.length + 1}:${problem.id}` });
+      continue;
+    }
     if (operation === 'multiplication' || operation === 'division') {
       const fact = composedFacts[composedIndex++];
       if (!fact) throw new Error('The composed fact schedule was incomplete.');
@@ -361,14 +466,6 @@ export function generateSession(settings: GameSettings, random: RandomSource): P
       problems.push({ ...problem, id: `q${problems.length + 1}:${problem.id}` });
       continue;
     }
-    let problem = generateProblem(operation, settings.difficulty, random);
-    let attempts = 0;
-    while (used.has(problem.skillKey) && attempts < 200) {
-      problem = generateProblem(operation, settings.difficulty, random);
-      attempts += 1;
-    }
-    used.add(problem.skillKey);
-    problems.push({ ...problem, id: `q${problems.length + 1}:${problem.id}` });
   }
 
   return problems;

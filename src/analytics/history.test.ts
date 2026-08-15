@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FakeClock } from '../domain/clock';
 import { generateSession, type GameSettings } from '../domain/math';
 import { SeededRandom } from '../domain/random';
-import { summarizeSession } from '../domain/session';
+import { RULESET_VERSION, summarizeSession } from '../domain/session';
 import { applyCompletedSession, createInitialSave, type SaveData } from '../storage/save';
 import {
   buildPlayHistoryExport,
@@ -31,7 +31,7 @@ function addRound(
     correct: index !== incorrectIndex,
     responseMs: 500 + index * 100,
   }));
-  const clock = new FakeClock(Date.parse(`2026-01-0${seed}T12:00:00Z`));
+  const clock = new FakeClock(Date.UTC(2026, 0, seed, 12));
   const summary = summarizeSession(problems, answers, settings, seed, clock);
   return applyCompletedSession(save, summary, clock.today());
 }
@@ -89,7 +89,7 @@ describe('play history analysis export', () => {
     expect(analysis.currentState.completedRoundCount).toBe(1);
     expect(analysis.overall.totalQuestions).toBe(10);
     expect(analysis.sessions[0]).toMatchObject({
-      rulesetVersion: 3,
+      rulesetVersion: RULESET_VERSION,
       seed: 1,
       settings: {
         operations: ['addition', 'subtraction', 'multiplication', 'division'],
@@ -132,7 +132,8 @@ describe('play history analysis export', () => {
     expect(groups).toHaveLength(3);
     expect(
       groups.find(
-        ({ settings, rulesetVersion }) => settings.difficulty === 'easy' && rulesetVersion === 3,
+        ({ settings, rulesetVersion }) =>
+          settings.difficulty === 'easy' && rulesetVersion === RULESET_VERSION,
       )?.rounds,
     ).toBe(2);
     expect(groups.find(({ rulesetVersion }) => rulesetVersion === 2)?.rounds).toBe(1);
@@ -141,7 +142,7 @@ describe('play history analysis export', () => {
 
     expect(summarizeRulesets(save.sessions)).toMatchObject([
       { rulesetVersion: 2, rounds: 1, totalQuestions: 10 },
-      { rulesetVersion: 3, rounds: 4, totalQuestions: 40 },
+      { rulesetVersion: RULESET_VERSION, rounds: 4, totalQuestions: 40 },
     ]);
 
     const oddAnswerSession = {
@@ -149,5 +150,33 @@ describe('play history analysis export', () => {
       answers: save.sessions[0]!.answers.slice(0, 9),
     };
     expect(summarizeConfigurations([oddAnswerSession])[0]?.medianResponseMs).toBe(900);
+  });
+
+  it('exports lifetime totals while limiting question detail to recent rounds', () => {
+    const settings: GameSettings = {
+      operations: ['addition'],
+      difficulty: 'medium',
+      questionCount: 10,
+    };
+    let save = createInitialSave('Private Player', 'cozy-cats:sunny');
+    for (let seed = 1; seed <= 35; seed += 1) save = addRound(save, settings, seed);
+
+    const analysis = buildPlayHistoryExport(save, '2026-02-10T12:00:00.000Z');
+    expect(analysis.currentState.completedRoundCount).toBe(35);
+    expect(analysis.overall.totalQuestions).toBe(350);
+    expect(analysis.retention).toEqual({
+      detailedRoundLimit: 30,
+      detailedRoundCount: 30,
+      archivedRoundCount: 5,
+    });
+    expect(analysis.sessions).toHaveLength(30);
+    expect(analysis.configurations[0]).toMatchObject({ rounds: 35 });
+    expect(analysis.rulesets[0]).toMatchObject({ rounds: 35, totalQuestions: 350 });
+    expect(analysis.operations).toEqual([
+      expect.objectContaining({ operation: 'addition', rounds: 35, totalQuestions: 350 }),
+    ]);
+    expect(analysis.difficulties).toEqual([
+      expect.objectContaining({ difficulty: 'medium', rounds: 35, totalQuestions: 350 }),
+    ]);
   });
 });

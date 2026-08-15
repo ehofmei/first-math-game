@@ -181,6 +181,7 @@ Use `fast-check` with Vitest for high-volume generated inputs.
 - Mixed sessions contain each selected operation when length permits.
 - No accidental duplicate equations appear unless remediation requests them.
 - Multiplication/division rounds satisfy the versioned low-challenge, focus, identity, zero, unit-divisor, and table-variety limits.
+- Addition/subtraction rounds satisfy the versioned low-challenge, regrouping, borrowing, negative-answer, repeated-answer, and identity limits.
 - Every supported operation combination and question count can be composed without partial output or an unbounded retry loop.
 - Ruleset version, settings, and seed reproduce the exact fact schedule, distractors, and answer order.
 
@@ -191,6 +192,7 @@ Statistical tests should use fixed seeds and generous, mathematically justified 
 - Correct-answer positions are approximately uniform.
 - Operation coverage is approximately balanced.
 - Multiplication/division focus-band frequencies increase as specified by difficulty.
+- Addition/subtraction carrying, borrowing, and Advanced negative-answer frequencies match their exact composition targets.
 - Large fixed-seed samples never exceed per-round trivial-fact or table-value limits.
 - Capsule outcomes reflect rarity weights over a broad unowned pool.
 - Guided-random weighting favors weak skills without starving normal coverage.
@@ -233,6 +235,8 @@ Initial critical journeys:
 8. Offline reload and play after initial caching.
 9. Update available during a round → defer → update safely afterward.
 10. Load an older save against a catalog containing new items.
+11. Results → review all or missed questions → return to results.
+12. History → review a retained round → clear play history without clearing rewards or settings.
 
 Playwright projects should include at minimum:
 
@@ -256,6 +260,7 @@ Good snapshot targets:
 - Setup.
 - Question answering and feedback states.
 - Results.
+- Round review with correct and incorrect answers.
 - Capsule reveal.
 - Gallery partial/complete.
 - Shop.
@@ -392,7 +397,8 @@ Maintain named, version-controlled fixtures:
 - Previous save schema versions.
 - Unknown legacy collectible ID.
 - Maximum-length names.
-- Near-`localStorage` size boundary if history grows.
+- Thirty retained detailed rounds plus archived lifetime aggregates at the retention boundary.
+- A legacy save with more than thirty detailed rounds migrating into bounded history.
 
 Fixture creation should use builders or factories rather than hand-copying large JSON blobs. Published legacy fixtures remain immutable so migration behavior stays verifiable.
 

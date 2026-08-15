@@ -42,7 +42,6 @@ describe('session scoring', () => {
     expect(summary.elapsedMs).toBe(10_000);
     expect(summary.coinsEarned).toBe(11);
     expect(summary.rulesetVersion).toBe(RULESET_VERSION);
-    expect(summary.rulesetVersion).toBe(3);
     expect(summary.id).toContain(String(clock.now()));
   });
 

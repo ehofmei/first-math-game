@@ -6,7 +6,7 @@ The export intentionally excludes the saved player name and does not create an a
 
 ## What is recorded
 
-For every completed round:
+For each of the newest 30 completed rounds:
 
 - Ruleset version and random seed.
 - Completion timestamp.
@@ -21,14 +21,17 @@ For economy pacing:
 - Capsule cost and daily-cap rules in effect when exporting.
 - Capsule-opening timestamp, cost, reward ID, kind, and rarity.
 
-The export also groups comparable rounds by operation set, difficulty, and question count. This prevents a 50-question mixed round from being directly averaged with a 10-question addition round.
+The export also groups comparable rounds by operation set, difficulty, question count, and ruleset version. Lifetime additive totals remain available after an older round's question detail is retired. This prevents a 50-question mixed round from being directly averaged with a 10-question addition round while keeping local storage bounded. See [Round review and play-history retention](./PLAY_HISTORY.md).
+
+Analysis export version 3 reports its retention window explicitly. Overall, ruleset, configuration, difficulty, and operation averages use lifetime weighted totals; configuration median response time uses only the retained detailed window and is labeled with that scope.
 
 ## How to share a useful sample
 
 1. Play several rounds using the configurations being evaluated.
 2. Open **Your progress** from the home screen.
-3. Choose **Copy analysis data**.
-4. Paste the JSON into the development chat and briefly identify the player context separately, such as “adult familiar with elementary arithmetic” or “child entering fourth grade.” Do not add a child's name.
+3. Optionally open **Review round** to inspect any surprising questions.
+4. Choose **Copy analysis data**.
+5. Paste the JSON into the development chat and briefly identify the player context separately, such as “adult familiar with elementary arithmetic” or “child entering fourth grade.” Do not add a child's name.
 
 Five rounds per configuration is a reasonable first directional sample. It is not enough to declare the design balanced, but it exposes obvious ceilings, difficulty jumps, distractor problems, and score compression. Samples from adults help calibrate the scoring ceiling; samples from the intended child players are necessary to calibrate learning difficulty and motivation.
 
@@ -61,6 +64,42 @@ Before local play-testing, the constrained composer was run across 5,000 fixed s
 | Advanced | 5.1% | 5.0% | 60% | 0.26 | 3 of 20 |
 
 The exact per-round caps held for every simulated seed. These figures are engineering baselines, not proof of age-appropriate difficulty; local child play-testing remains necessary.
+
+### Version 4 simulation baseline
+
+The addition/subtraction composer was verified across 5,000 representative fixed-seed, twenty-question rounds: 625 rounds for each single-operation difficulty. It was also exercised across every supported operation combination and question count.
+
+| Difficulty | Low-challenge range | Minimum focus | Advanced negative subtraction | Correct-answer cap |
+| --- | ---: | ---: | ---: | ---: |
+| Easy | exactly 4 of 20 | 6 of 20 | none | 4 of 20 |
+| Medium | 0–2 of 20 | 8 of 20 | none | 4 of 20 |
+| Hard | 0–2 of 20 | 12 of 20 | none | 4 of 20 |
+| Advanced | 0–2 of 20 | 12 of 20 | exactly 6 of 20 subtraction questions | 4 of 20 |
+
+All 5,000 simulated rounds satisfied arithmetic ranges, focus minimums, identity and sign limits, answer-frequency limits, and exact-fact uniqueness with zero composition failures. See [Addition and subtraction generation](./ADDITION_SUBTRACTION_GENERATION.md) for the classification rules. As with version 3, this is an engineering baseline; it does not substitute for observing whether the labels feel right to the intended players.
+
+Ruleset version 5 retains this composition baseline and removes mirrored-sign answer pairs from Advanced subtraction. Version 4 and version 5 play results remain separate because the changed choices can affect both accuracy and response time even though the generated equations are unchanged.
+
+### Version 4 local play-test baseline
+
+One adult test pass covered one twenty-question, single-operation round for every version 4 difficulty and addition/subtraction combination.
+
+| Difficulty | Addition accuracy | Addition median | Subtraction accuracy | Subtraction median |
+| --- | ---: | ---: | ---: | ---: |
+| Easy | 95% | 1,184 ms | 100% | 1,043 ms |
+| Medium | 90% | 1,746 ms | 90% | 1,868 ms |
+| Hard | 95% | 4,619 ms | 90% | 4,506 ms |
+| Advanced | 80% | 6,778 ms | 85% | 6,341 ms |
+
+Every observed round met its exact low-challenge, focus, negative-answer, unique-fact, and repeated-answer constraints. Hard Addition included one known 32.1-second interruption; removing that question lowers its average response time from 6.53 to 5.19 seconds, while the median remains the safer comparison.
+
+Advanced felt materially difficult and its response times and accuracy separated clearly from Hard. In Advanced subtraction, 14 of 20 questions displayed the correct answer and its exact opposite sign together. That 70% incidence produced a reliable answer-choice cue and motivated the version 5 correction above.
+
+### Version 6 short mixed-round correction
+
+A ten-question, four-operation Advanced play test contained four focus questions, five review questions, one low-challenge question, and no negative subtraction. This was not solely unlucky selection: separately flooring the two- or three-question per-operation targets structurally reduced the intended 60% focus share to 40%.
+
+Ruleset version 6 changes only the Advanced short-round rounding behavior. Replaying the observed seed now produces six focus questions and one negative subtraction question. Existing ranges, classifications, low-challenge caps, and version 5 signed-choice correction remain unchanged.
 
 ## Primary comparisons
 

@@ -1,10 +1,18 @@
 import { catalog } from '../content/catalog';
-import { OPERATION_IDS, type GameSettings } from '../domain/math';
+import type { DifficultyId, GameSettings, OperationId } from '../domain/math';
+import {
+  configurationKey,
+  mergeArchivedProgress,
+  normalizeSettings,
+  progressForSessions,
+  type ArchivedProgress,
+  type ProgressTotals,
+} from '../domain/progress';
 import { CAPSULE_COST, DAILY_COIN_CAP } from '../domain/rewards';
 import { scoreAnswer, type SessionSummary } from '../domain/session';
-import type { SaveData } from '../storage/save';
+import { DETAILED_SESSION_LIMIT, type SaveData } from '../storage/save';
 
-export const PLAY_HISTORY_EXPORT_VERSION = 2;
+export const PLAY_HISTORY_EXPORT_VERSION = 3;
 
 function round(value: number, decimals = 2): number {
   const scale = 10 ** decimals;
@@ -24,20 +32,6 @@ function median(values: readonly number[]): number {
   return ((sorted[middle - 1] ?? 0) + (sorted[middle] ?? 0)) / 2;
 }
 
-function normalizedSettings(settings: GameSettings): GameSettings {
-  return {
-    ...settings,
-    operations: [...settings.operations].sort(
-      (left, right) => OPERATION_IDS.indexOf(left) - OPERATION_IDS.indexOf(right),
-    ),
-  };
-}
-
-function configurationKey(settings: GameSettings, rulesetVersion: number): string {
-  const normalized = normalizedSettings(settings);
-  return `ruleset-${rulesetVersion}|${normalized.operations.join('+')}|${normalized.difficulty}|${normalized.questionCount}`;
-}
-
 function sessionResponseTimes(session: SessionSummary): number[] {
   return session.answers.map(({ responseMs }) => responseMs);
 }
@@ -53,10 +47,19 @@ export interface HistoryConfigurationSummary {
   averageAccuracyPercent: number;
   averageResponseMs: number;
   medianResponseMs: number;
+  medianResponseScope: 'retained-detailed-rounds';
 }
 
 export interface HistoryRulesetSummary {
   rulesetVersion: number;
+  rounds: number;
+  totalQuestions: number;
+  averageScorePerQuestion: number;
+  averageAccuracyPercent: number;
+  averageResponseMs: number;
+}
+
+export interface HistoryProgressSummary {
   rounds: number;
   totalQuestions: number;
   averageScorePerQuestion: number;
@@ -89,6 +92,11 @@ export interface PlayHistoryExport {
     ownedCollectibleCount: number;
     completedRoundCount: number;
   };
+  retention: {
+    detailedRoundLimit: number;
+    detailedRoundCount: number;
+    archivedRoundCount: number;
+  };
   overall: {
     averageScore: number;
     averageScorePerQuestion: number;
@@ -98,6 +106,8 @@ export interface PlayHistoryExport {
   };
   rulesets: HistoryRulesetSummary[];
   configurations: HistoryConfigurationSummary[];
+  difficulties: Array<HistoryProgressSummary & { difficulty: DifficultyId }>;
+  operations: Array<HistoryProgressSummary & { operation: OperationId }>;
   economyEvents: Array<{
     occurredAt: string;
     type: 'capsule_opened';
@@ -147,64 +157,75 @@ export interface PlayHistoryExport {
 export function summarizeConfigurations(
   sessions: readonly SessionSummary[],
 ): HistoryConfigurationSummary[] {
-  const grouped = new Map<string, SessionSummary[]>();
-  for (const session of sessions) {
+  return summarizeConfigurationProgress(progressForSessions(sessions), sessions);
+}
+
+function summarizeConfigurationProgress(
+  progress: ArchivedProgress,
+  detailedSessions: readonly SessionSummary[],
+): HistoryConfigurationSummary[] {
+  const responseTimesByConfiguration = new Map<string, number[]>();
+  for (const session of detailedSessions) {
     const key = configurationKey(session.settings, session.rulesetVersion);
-    grouped.set(key, [...(grouped.get(key) ?? []), session]);
+    responseTimesByConfiguration.set(key, [
+      ...(responseTimesByConfiguration.get(key) ?? []),
+      ...sessionResponseTimes(session),
+    ]);
   }
 
-  return [...grouped.entries()]
-    .map(([key, group]) => {
-      const responseTimes = group.flatMap(sessionResponseTimes);
+  return progress.configurations
+    .map((configuration) => {
+      const responseTimes = responseTimesByConfiguration.get(configuration.key) ?? [];
       return {
-        key,
-        rulesetVersion: group[0]!.rulesetVersion,
-        settings: normalizedSettings(group[0]!.settings),
-        rounds: group.length,
-        averageScore: round(average(group.map(({ score }) => score))),
-        highScore: Math.max(...group.map(({ score }) => score)),
-        averageScorePerQuestion: round(
-          average(group.map(({ score, answers }) => score / answers.length)),
-        ),
-        averageAccuracyPercent: round(average(group.map(({ accuracy }) => accuracy * 100))),
-        averageResponseMs: round(average(responseTimes)),
+        key: configuration.key,
+        rulesetVersion: configuration.rulesetVersion,
+        settings: normalizeSettings(configuration.settings),
+        rounds: configuration.rounds,
+        averageScore: round(configuration.score / configuration.rounds),
+        highScore: configuration.highScore,
+        averageScorePerQuestion: round(configuration.score / configuration.questions),
+        averageAccuracyPercent: round((configuration.correct / configuration.questions) * 100),
+        averageResponseMs: round(configuration.responseMs / configuration.questions),
         medianResponseMs: round(median(responseTimes)),
+        medianResponseScope: 'retained-detailed-rounds' as const,
       };
     })
     .sort((left, right) => right.rounds - left.rounds || left.key.localeCompare(right.key));
 }
 
 export function summarizeRulesets(sessions: readonly SessionSummary[]): HistoryRulesetSummary[] {
-  const versions = new Map<number, SessionSummary[]>();
-  for (const session of sessions) {
-    versions.set(session.rulesetVersion, [
-      ...(versions.get(session.rulesetVersion) ?? []),
-      session,
-    ]);
-  }
-  return [...versions.entries()]
-    .map(([rulesetVersion, group]) => {
-      const responseTimes = group.flatMap(sessionResponseTimes);
-      const totalQuestions = group.reduce((sum, session) => sum + session.answers.length, 0);
-      return {
-        rulesetVersion,
-        rounds: group.length,
-        totalQuestions,
-        averageScorePerQuestion: round(
-          group.reduce((sum, session) => sum + session.score, 0) / totalQuestions,
-        ),
-        averageAccuracyPercent: round(
-          (group.reduce((sum, session) => sum + session.correctCount, 0) / totalQuestions) * 100,
-        ),
-        averageResponseMs: round(average(responseTimes)),
-      };
-    })
+  return summarizeRulesetProgress(progressForSessions(sessions));
+}
+
+function summarizeRulesetProgress(progress: ArchivedProgress): HistoryRulesetSummary[] {
+  return progress.rulesets
+    .map((ruleset) => ({
+      rulesetVersion: ruleset.rulesetVersion,
+      rounds: ruleset.rounds,
+      totalQuestions: ruleset.questions,
+      averageScorePerQuestion: round(ruleset.score / ruleset.questions),
+      averageAccuracyPercent: round((ruleset.correct / ruleset.questions) * 100),
+      averageResponseMs: round(ruleset.responseMs / ruleset.questions),
+    }))
     .sort((left, right) => left.rulesetVersion - right.rulesetVersion);
 }
 
+function summarizeProgressTotals(totals: ProgressTotals): HistoryProgressSummary {
+  return {
+    rounds: totals.rounds,
+    totalQuestions: totals.questions,
+    averageScorePerQuestion: round(totals.questions === 0 ? 0 : totals.score / totals.questions),
+    averageAccuracyPercent: round(
+      totals.questions === 0 ? 0 : (totals.correct / totals.questions) * 100,
+    ),
+    averageResponseMs: round(totals.questions === 0 ? 0 : totals.responseMs / totals.questions),
+  };
+}
+
 export function buildPlayHistoryExport(save: SaveData, generatedAt: string): PlayHistoryExport {
-  const allResponseTimes = save.sessions.flatMap(sessionResponseTimes);
-  const totalQuestions = save.sessions.reduce((sum, session) => sum + session.answers.length, 0);
+  const recentProgress = progressForSessions(save.sessions);
+  const lifetimeProgress = mergeArchivedProgress(save.archivedProgress, recentProgress);
+  const overall = lifetimeProgress.overall;
   return {
     format: 'number-nook-play-history',
     exportVersion: PLAY_HISTORY_EXPORT_VERSION,
@@ -228,19 +249,40 @@ export function buildPlayHistoryExport(save: SaveData, generatedAt: string): Pla
     currentState: {
       coinBalance: save.coins,
       ownedCollectibleCount: save.ownedCollectibleIds.length,
-      completedRoundCount: save.sessions.length,
+      completedRoundCount: overall.rounds,
+    },
+    retention: {
+      detailedRoundLimit: DETAILED_SESSION_LIMIT,
+      detailedRoundCount: save.sessions.length,
+      archivedRoundCount: save.archivedProgress.overall.rounds,
     },
     overall: {
-      averageScore: round(average(save.sessions.map(({ score }) => score))),
+      averageScore: round(overall.rounds === 0 ? 0 : overall.score / overall.rounds),
       averageScorePerQuestion: round(
-        average(save.sessions.map(({ score, answers }) => score / answers.length)),
+        overall.questions === 0 ? 0 : overall.score / overall.questions,
       ),
-      averageAccuracyPercent: round(average(save.sessions.map(({ accuracy }) => accuracy * 100))),
-      averageResponseMs: round(average(allResponseTimes)),
-      totalQuestions,
+      averageAccuracyPercent: round(
+        overall.questions === 0 ? 0 : (overall.correct / overall.questions) * 100,
+      ),
+      averageResponseMs: round(
+        overall.questions === 0 ? 0 : overall.responseMs / overall.questions,
+      ),
+      totalQuestions: overall.questions,
     },
-    rulesets: summarizeRulesets(save.sessions),
-    configurations: summarizeConfigurations(save.sessions),
+    rulesets: summarizeRulesetProgress(lifetimeProgress),
+    configurations: summarizeConfigurationProgress(lifetimeProgress, save.sessions),
+    difficulties: lifetimeProgress.difficulties
+      .map((difficulty) => ({
+        difficulty: difficulty.difficulty,
+        ...summarizeProgressTotals(difficulty),
+      }))
+      .sort((left, right) => left.difficulty.localeCompare(right.difficulty)),
+    operations: lifetimeProgress.operations
+      .map((operation) => ({
+        operation: operation.operation,
+        ...summarizeProgressTotals(operation),
+      }))
+      .sort((left, right) => left.operation.localeCompare(right.operation)),
     economyEvents: save.economyEvents.map((event) => {
       const collectible = catalog.collectibles.find(({ id }) => id === event.collectibleId);
       return {
@@ -259,7 +301,7 @@ export function buildPlayHistoryExport(save: SaveData, generatedAt: string): Pla
         rulesetVersion: session.rulesetVersion,
         completedAt: session.completedAt,
         seed: session.seed,
-        settings: normalizedSettings(session.settings),
+        settings: normalizeSettings(session.settings),
         results: {
           score: session.score,
           scorePerQuestion: round(session.score / session.answers.length),

@@ -23,10 +23,16 @@ import {
 } from './domain/math';
 import { createRandomSeed, SeededRandom } from './domain/random';
 import { CAPSULE_COST, chooseCapsuleReward, DAILY_COIN_CAP } from './domain/rewards';
-import { summarizeSession, type AnswerRecord, type SessionSummary } from './domain/session';
+import {
+  scoreAnswer,
+  summarizeSession,
+  type AnswerRecord,
+  type SessionSummary,
+} from './domain/session';
 import { StateGallery } from './dev/StateGallery';
 import {
   applyCompletedSession,
+  clearPlayHistory,
   createInitialSave,
   dailyCoinsRemaining,
   LocalStorageSaveRepository,
@@ -35,7 +41,20 @@ import {
 } from './storage/save';
 
 type Screen =
-  'onboarding' | 'home' | 'setup' | 'play' | 'results' | 'capsule' | 'gallery' | 'history';
+  | 'onboarding'
+  | 'home'
+  | 'setup'
+  | 'play'
+  | 'results'
+  | 'review'
+  | 'capsule'
+  | 'gallery'
+  | 'history';
+
+interface ReviewState {
+  summary: SessionSummary;
+  back: 'results' | 'history';
+}
 
 interface ActiveGame {
   seed: number;
@@ -442,6 +461,7 @@ function Results({
   onReplay,
   onHome,
   onCapsule,
+  onReview,
   dailyRemaining,
 }: {
   summary: SessionSummary;
@@ -449,6 +469,7 @@ function Results({
   onReplay: () => void;
   onHome: () => void;
   onCapsule: () => void;
+  onReview: () => void;
   dailyRemaining: number;
 }) {
   return (
@@ -498,6 +519,9 @@ function Results({
         <button className="secondary-button" type="button" onClick={onCapsule}>
           Open a capsule
         </button>
+        <button className="secondary-button" type="button" onClick={onReview}>
+          Review questions
+        </button>
         <button className="text-button" type="button" onClick={onHome}>
           Back home
         </button>
@@ -506,11 +530,148 @@ function Results({
   );
 }
 
-function History({ save, onBack }: { save: SaveData; onBack: () => void }) {
+function RoundReview({ summary, onBack }: { summary: SessionSummary; onBack: () => void }) {
+  const missedCount = summary.answers.filter(({ correct }) => !correct).length;
+  const [filter, setFilter] = useState<'all' | 'missed'>(missedCount > 0 ? 'missed' : 'all');
+  const visibleAnswers = summary.answers
+    .map((answer, index) => ({ answer, index }))
+    .filter(({ answer }) => filter === 'all' || !answer.correct);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  return (
+    <main className="page-shell review-page">
+      <header className="page-header">
+        <button className="icon-button" type="button" onClick={onBack} aria-label="Back">
+          ←
+        </button>
+        <div>
+          <span className="eyebrow">Round review</span>
+          <h1>Review your questions</h1>
+          <p>Check the answers at your own pace. Review does not change your score or Paw Coins.</p>
+        </div>
+      </header>
+
+      <section className="review-overview" aria-label="Review summary">
+        <article>
+          <span>Correct</span>
+          <strong>
+            {summary.correctCount} of {summary.answers.length}
+          </strong>
+        </article>
+        <article>
+          <span>Answers to review</span>
+          <strong>{missedCount}</strong>
+        </article>
+        <article>
+          <span>Thinking time</span>
+          <strong>{formatTime(summary.elapsedMs)}</strong>
+        </article>
+      </section>
+
+      <div className="filter-row review-filters" aria-label="Question review filters">
+        <button
+          type="button"
+          className={`choice-chip ${filter === 'all' ? 'choice-chip--selected' : ''}`}
+          aria-pressed={filter === 'all'}
+          onClick={() => setFilter('all')}
+        >
+          All questions ({summary.answers.length})
+        </button>
+        <button
+          type="button"
+          className={`choice-chip ${filter === 'missed' ? 'choice-chip--selected' : ''}`}
+          aria-pressed={filter === 'missed'}
+          onClick={() => setFilter('missed')}
+        >
+          Review answers ({missedCount})
+        </button>
+      </div>
+
+      {visibleAnswers.length === 0 ? (
+        <section className="panel review-empty">
+          <h2>Everything was correct!</h2>
+          <p>There are no answers that need another look in this round.</p>
+        </section>
+      ) : (
+        <section className="review-list" aria-label="Reviewed questions">
+          {visibleAnswers.map(({ answer, index }) => (
+            <article
+              className={`review-card review-card--${answer.correct ? 'correct' : 'incorrect'}`}
+              key={`${answer.problemId}:${index}`}
+            >
+              <header>
+                <span>Question {index + 1}</span>
+                <strong>{answer.correct ? 'Correct' : 'Answer to review'}</strong>
+              </header>
+              <div className="review-equation">
+                <span>{answer.left}</span>
+                <span>{OPERATION_SYMBOLS[answer.operation]}</span>
+                <span>{answer.right}</span>
+                <span>=</span>
+                <span>{answer.correctAnswer}</span>
+              </div>
+              <dl>
+                <div>
+                  <dt>Your answer</dt>
+                  <dd className={answer.correct ? '' : 'review-answer--incorrect'}>
+                    {Number.isNaN(answer.selectedAnswer) ? 'No answer' : answer.selectedAnswer}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Correct answer</dt>
+                  <dd>{answer.correctAnswer}</dd>
+                </div>
+                <div>
+                  <dt>Time</dt>
+                  <dd>{formatTime(answer.responseMs)}</dd>
+                </div>
+                <div>
+                  <dt>Score</dt>
+                  <dd>{scoreAnswer(answer.correct, answer.responseMs)}</dd>
+                </div>
+              </dl>
+            </article>
+          ))}
+        </section>
+      )}
+
+      <button className="primary-button review-back" type="button" onClick={onBack}>
+        Back
+      </button>
+    </main>
+  );
+}
+
+function History({
+  save,
+  onBack,
+  onReview,
+  onClear,
+}: {
+  save: SaveData;
+  onBack: () => void;
+  onReview: (session: SessionSummary) => void;
+  onClear: () => void;
+}) {
   const [generatedAt] = useState(() => new Date().toISOString());
   const analysis = useMemo(() => buildPlayHistoryExport(save, generatedAt), [generatedAt, save]);
   const serialized = useMemo(() => serializePlayHistory(save, generatedAt), [generatedAt, save]);
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [confirmClear, setConfirmClear] = useState(false);
+  const [showAllRecentRounds, setShowAllRecentRounds] = useState(false);
+  const [showAllConfigurations, setShowAllConfigurations] = useState(false);
+  const recentRoundPreviewLimit = 5;
+  const configurationPreviewLimit = 6;
+  const recentSessions = [...save.sessions].reverse();
+  const visibleRecentSessions = showAllRecentRounds
+    ? recentSessions
+    : recentSessions.slice(0, recentRoundPreviewLimit);
+  const visibleConfigurations = showAllConfigurations
+    ? analysis.configurations
+    : analysis.configurations.slice(0, configurationPreviewLimit);
 
   const copyHistory = async () => {
     try {
@@ -598,48 +759,29 @@ function History({ save, onBack }: { save: SaveData; onBack: () => void }) {
         </details>
       </section>
 
-      <section className="history-section">
-        <h2>Performance by setup</h2>
-        {analysis.configurations.length === 0 ? (
-          <div className="panel empty-history">
-            <p>Complete a round and its balance data will appear here.</p>
-          </div>
-        ) : (
-          <div className="configuration-grid">
-            {analysis.configurations.map((configuration) => (
-              <article className="configuration-card" key={configuration.key}>
-                <span className="mode-pill">{settingsSummary(configuration.settings)}</span>
-                <small>Ruleset {configuration.rulesetVersion}</small>
-                <strong>{configuration.highScore.toLocaleString()} high score</strong>
-                <dl>
-                  <div>
-                    <dt>Rounds</dt>
-                    <dd>{configuration.rounds}</dd>
-                  </div>
-                  <div>
-                    <dt>Average score</dt>
-                    <dd>{Math.round(configuration.averageScore).toLocaleString()}</dd>
-                  </div>
-                  <div>
-                    <dt>Accuracy</dt>
-                    <dd>{configuration.averageAccuracyPercent}%</dd>
-                  </div>
-                  <div>
-                    <dt>Average answer</dt>
-                    <dd>{formatTime(configuration.averageResponseMs)}</dd>
-                  </div>
-                </dl>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-
       {save.sessions.length > 0 && (
         <section className="history-section">
-          <h2>Completed rounds</h2>
+          <div className="history-section-heading">
+            <h2>Recent detailed rounds</h2>
+            {save.sessions.length > recentRoundPreviewLimit && (
+              <button
+                className="text-button"
+                type="button"
+                aria-expanded={showAllRecentRounds}
+                onClick={() => setShowAllRecentRounds((current) => !current)}
+              >
+                {showAllRecentRounds
+                  ? 'Show fewer rounds'
+                  : `Show all ${save.sessions.length} rounds`}
+              </button>
+            )}
+          </div>
+          <p>
+            The newest {analysis.retention.detailedRoundLimit} rounds keep complete question
+            details. Older rounds remain included in lifetime totals.
+          </p>
           <div className="session-history-list">
-            {[...save.sessions].reverse().map((session) => (
+            {visibleRecentSessions.map((session) => (
               <article className="session-history-card" key={session.id}>
                 <div>
                   <span className="mode-pill">{settingsSummary(session.settings)}</span>
@@ -674,11 +816,96 @@ function History({ save, onBack }: { save: SaveData; onBack: () => void }) {
                     </dd>
                   </div>
                 </dl>
+                <button className="text-button" type="button" onClick={() => onReview(session)}>
+                  Review round
+                </button>
               </article>
             ))}
           </div>
         </section>
       )}
+
+      <section className="history-section">
+        <div className="history-section-heading">
+          <h2>Performance by setup</h2>
+          {analysis.configurations.length > configurationPreviewLimit && (
+            <button
+              className="text-button"
+              type="button"
+              aria-expanded={showAllConfigurations}
+              onClick={() => setShowAllConfigurations((current) => !current)}
+            >
+              {showAllConfigurations
+                ? 'Show fewer setups'
+                : `Show all ${analysis.configurations.length} setups`}
+            </button>
+          )}
+        </div>
+        {analysis.configurations.length === 0 ? (
+          <div className="panel empty-history">
+            <p>Complete a round and its balance data will appear here.</p>
+          </div>
+        ) : (
+          <div className="configuration-grid">
+            {visibleConfigurations.map((configuration) => (
+              <article className="configuration-card" key={configuration.key}>
+                <span className="mode-pill">{settingsSummary(configuration.settings)}</span>
+                <small>Ruleset {configuration.rulesetVersion}</small>
+                <strong>{configuration.highScore.toLocaleString()} high score</strong>
+                <dl>
+                  <div>
+                    <dt>Rounds</dt>
+                    <dd>{configuration.rounds}</dd>
+                  </div>
+                  <div>
+                    <dt>Average score</dt>
+                    <dd>{Math.round(configuration.averageScore).toLocaleString()}</dd>
+                  </div>
+                  <div>
+                    <dt>Accuracy</dt>
+                    <dd>{configuration.averageAccuracyPercent}%</dd>
+                  </div>
+                  <div>
+                    <dt>Average answer</dt>
+                    <dd>{formatTime(configuration.averageResponseMs)}</dd>
+                  </div>
+                </dl>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="panel history-clear-panel">
+        <div>
+          <h2>Clear testing history</h2>
+          <p>
+            Remove scores, detailed rounds, and lifetime statistics. Paw Coins, companions, and game
+            settings stay exactly as they are.
+          </p>
+        </div>
+        {confirmClear ? (
+          <div className="history-actions">
+            <button
+              className="secondary-button danger-button"
+              type="button"
+              onClick={() => {
+                onClear();
+                setConfirmClear(false);
+              }}
+            >
+              Confirm clear history
+            </button>
+            <button className="text-button" type="button" onClick={() => setConfirmClear(false)}>
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button className="text-button" type="button" onClick={() => setConfirmClear(true)}>
+            Clear play history
+          </button>
+        )}
+      </section>
     </main>
   );
 }
@@ -819,6 +1046,7 @@ export default function App() {
   const [game, setGame] = useState<ActiveGame | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [summary, setSummary] = useState<SessionSummary | null>(null);
+  const [review, setReview] = useState<ReviewState | null>(null);
   const [previousSessions, setPreviousSessions] = useState<SessionSummary[]>([]);
   const [capsuleReward, setCapsuleReward] = useState<CollectibleDefinition | null | undefined>(
     undefined,
@@ -862,6 +1090,7 @@ export default function App() {
     });
     setElapsed(0);
     setSummary(null);
+    setReview(null);
     setCapsuleReward(undefined);
     setScreen('play');
   }, [save]);
@@ -982,6 +1211,10 @@ export default function App() {
         previous={previousSessions}
         onReplay={startGame}
         onHome={() => setScreen('home')}
+        onReview={() => {
+          setReview({ summary, back: 'results' });
+          setScreen('review');
+        }}
         dailyRemaining={dailyCoinsRemaining(save, clock.today())}
         onCapsule={() => {
           setCapsuleReward(undefined);
@@ -989,7 +1222,30 @@ export default function App() {
         }}
       />
     );
-  if (screen === 'history') return <History save={save} onBack={() => setScreen('home')} />;
+  if (screen === 'review' && review)
+    return (
+      <RoundReview
+        summary={review.summary}
+        onBack={() => setScreen(review.back === 'results' && summary ? 'results' : 'history')}
+      />
+    );
+  if (screen === 'history')
+    return (
+      <History
+        save={save}
+        onBack={() => setScreen('home')}
+        onReview={(session) => {
+          setReview({ summary: session, back: 'history' });
+          setScreen('review');
+        }}
+        onClear={() => {
+          commitSave(clearPlayHistory(save));
+          setSummary(null);
+          setPreviousSessions([]);
+          setReview(null);
+        }}
+      />
+    );
   if (screen === 'capsule')
     return (
       <Capsule

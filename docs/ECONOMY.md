@@ -30,6 +30,6 @@ These are initial play-test values, not permanent balance claims. The relevant c
 
 ## Save behavior
 
-Save schema version 2 added the local date and number of coins earned on that date. Version 3 adds reproducible question snapshots and capsule transaction history for balance analysis. Version-1 and version-2 saves migrate automatically and keep their prior balance, settings, sessions, and collection. Previously accumulated coins are intentionally not reduced retroactively.
+Save schema version 2 added the local date and number of coins earned on that date. Version 3 added reproducible question snapshots and capsule transaction history for balance analysis. Version 4 keeps the newest 30 rounds in detail and rolls older rounds into compact lifetime statistics. Version-1, version-2, and version-3 saves migrate automatically and keep their prior balance, settings, collection, and meaningful progress. Previously accumulated coins are intentionally not reduced retroactively.
 
 Future direct-purchase prices should remain substantially higher than the capsule price because direct purchase removes randomness. Revisit the daily cap, capsule cost, and catalog size together rather than tuning one in isolation.

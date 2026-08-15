@@ -46,14 +46,15 @@ function maximumPerTen(count: number, perTen: number): number {
   return Math.ceil((count * perTen) / 10);
 }
 
-function minimumPerTen(count: number, perTen: number): number {
-  return Math.floor((count * perTen) / 10);
+function minimumFocusCount(count: number, difficulty: DifficultyId): number {
+  const exactTarget = (count * FOCUS_PER_TEN[difficulty]) / 10;
+  return difficulty === 'advanced' ? Math.round(exactTarget) : Math.floor(exactTarget);
 }
 
 export function compositionTargets(count: number, difficulty: DifficultyId): CategoryTargets {
   return {
     maximumLow: maximumPerTen(count, LOW_PER_TEN[difficulty]),
-    minimumFocus: minimumPerTen(count, FOCUS_PER_TEN[difficulty]),
+    minimumFocus: minimumFocusCount(count, difficulty),
   };
 }
 

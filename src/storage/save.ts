@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DEFAULT_SETTINGS, DIFFICULTY_IDS, OPERATION_IDS, type GameSettings } from '../domain/math';
+import { archiveSessions, createEmptyArchivedProgress } from '../domain/progress';
 import { DAILY_COIN_CAP } from '../domain/rewards';
 import type { AnswerRecord, SessionSummary } from '../domain/session';
 
@@ -64,7 +65,40 @@ const economyEventSchema = z.object({
   collectibleId: z.string(),
 });
 
-function commonSaveFields<T extends z.ZodType>(sessions: T) {
+export const DETAILED_SESSION_LIMIT = 30;
+
+const progressTotalsSchema = z.object({
+  rounds: z.number().int().nonnegative(),
+  questions: z.number().int().nonnegative(),
+  correct: z.number().int().nonnegative(),
+  score: z.number().nonnegative(),
+  responseMs: z.number().nonnegative(),
+});
+
+const archivedProgressSchema = z.object({
+  overall: progressTotalsSchema,
+  rulesets: z
+    .array(progressTotalsSchema.extend({ rulesetVersion: z.number().int().positive() }))
+    .max(100),
+  difficulties: z
+    .array(progressTotalsSchema.extend({ difficulty: z.enum(DIFFICULTY_IDS) }))
+    .max(DIFFICULTY_IDS.length),
+  operations: z
+    .array(progressTotalsSchema.extend({ operation: z.enum(OPERATION_IDS) }))
+    .max(OPERATION_IDS.length),
+  configurations: z
+    .array(
+      progressTotalsSchema.extend({
+        key: z.string(),
+        rulesetVersion: z.number().int().positive(),
+        settings: settingsSchema,
+        highScore: z.number().nonnegative(),
+      }),
+    )
+    .max(1_000),
+});
+
+function commonSaveFields<T extends z.ZodType>(sessions: T, maximumSessions = 100) {
   return {
     player: z.object({
       name: z.string().min(1).max(30),
@@ -73,7 +107,7 @@ function commonSaveFields<T extends z.ZodType>(sessions: T) {
     coins: z.number().int().nonnegative(),
     ownedCollectibleIds: z.array(z.string()),
     equippedCollectibleId: z.string(),
-    sessions: z.array(sessions).max(100),
+    sessions: z.array(sessions).max(maximumSessions),
   };
 }
 
@@ -91,7 +125,7 @@ const legacySaveV2Schema = z.object({
   }),
 });
 
-export const saveSchema = z.object({
+const legacySaveV3Schema = z.object({
   schemaVersion: z.literal(3),
   ...commonSaveFields(sessionSchema),
   dailyCoins: z.object({
@@ -99,6 +133,17 @@ export const saveSchema = z.object({
     earned: z.number().int().min(0).max(DAILY_COIN_CAP),
   }),
   economyEvents: z.array(economyEventSchema).max(500),
+});
+
+export const saveSchema = z.object({
+  schemaVersion: z.literal(4),
+  ...commonSaveFields(sessionSchema, DETAILED_SESSION_LIMIT),
+  dailyCoins: z.object({
+    date: z.string(),
+    earned: z.number().int().min(0).max(DAILY_COIN_CAP),
+  }),
+  economyEvents: z.array(economyEventSchema).max(500),
+  archivedProgress: archivedProgressSchema,
 });
 
 export type SaveData = z.infer<typeof saveSchema>;
@@ -133,12 +178,13 @@ function enrichLegacySession(session: z.infer<typeof legacySessionSchema>): Sess
 
 export function createInitialSave(name: string, starterId: string): SaveData {
   return {
-    schemaVersion: 3,
+    schemaVersion: 4,
     player: { name: name.trim() },
     settings: DEFAULT_SETTINGS,
     coins: 0,
     dailyCoins: { date: '', earned: 0 },
     economyEvents: [],
+    archivedProgress: createEmptyArchivedProgress(),
     ownedCollectibleIds: [starterId],
     equippedCollectibleId: starterId,
     sessions: [],
@@ -159,11 +205,25 @@ export function applyCompletedSession(
   const earnedBeforeSession = save.dailyCoins.date === date ? save.dailyCoins.earned : 0;
   const coinsEarned = Math.min(summary.coinsPotential, DAILY_COIN_CAP - earnedBeforeSession);
   const storedSummary = { ...summary, coinsEarned };
+  const detailedSessions = [...save.sessions, storedSummary];
+  const archivedSessions = detailedSessions.slice(
+    0,
+    Math.max(0, detailedSessions.length - DETAILED_SESSION_LIMIT),
+  );
   return {
     ...save,
     coins: save.coins + coinsEarned,
     dailyCoins: { date, earned: earnedBeforeSession + coinsEarned },
-    sessions: [...save.sessions, storedSummary].slice(-100),
+    archivedProgress: archiveSessions(save.archivedProgress, archivedSessions),
+    sessions: detailedSessions.slice(-DETAILED_SESSION_LIMIT),
+  };
+}
+
+export function clearPlayHistory(save: SaveData): SaveData {
+  return {
+    ...save,
+    sessions: [],
+    archivedProgress: createEmptyArchivedProgress(),
   };
 }
 
@@ -188,7 +248,7 @@ export class LocalStorageSaveRepository implements SaveRepository {
   }
 
   save(data: SaveData): Promise<void> {
-    localStorage.setItem(LocalStorageSaveRepository.key, this.export(data));
+    localStorage.setItem(LocalStorageSaveRepository.key, JSON.stringify(saveSchema.parse(data)));
     return Promise.resolve();
   }
 
@@ -201,23 +261,40 @@ export class LocalStorageSaveRepository implements SaveRepository {
     const current = saveSchema.safeParse(input);
     if (current.success) return current.data;
 
+    const retain = (sessions: readonly SessionSummary[]) => {
+      const archived = sessions.slice(0, Math.max(0, sessions.length - DETAILED_SESSION_LIMIT));
+      return {
+        archivedProgress: archiveSessions(createEmptyArchivedProgress(), archived),
+        sessions: sessions.slice(-DETAILED_SESSION_LIMIT),
+      };
+    };
+
+    const legacyV3 = legacySaveV3Schema.safeParse(input);
+    if (legacyV3.success) {
+      return saveSchema.parse({
+        ...legacyV3.data,
+        schemaVersion: 4,
+        ...retain(legacyV3.data.sessions),
+      });
+    }
+
     const legacyV2 = legacySaveV2Schema.safeParse(input);
     if (legacyV2.success) {
       return {
         ...legacyV2.data,
-        schemaVersion: 3,
+        schemaVersion: 4,
         economyEvents: [],
-        sessions: legacyV2.data.sessions.map(enrichLegacySession),
+        ...retain(legacyV2.data.sessions.map(enrichLegacySession)),
       };
     }
 
     const legacyV1 = legacySaveV1Schema.parse(input);
     return {
       ...legacyV1,
-      schemaVersion: 3,
+      schemaVersion: 4,
       dailyCoins: { date: '', earned: 0 },
       economyEvents: [],
-      sessions: legacyV1.sessions.map(enrichLegacySession),
+      ...retain(legacyV1.sessions.map(enrichLegacySession)),
     };
   }
 }

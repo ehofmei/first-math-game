@@ -84,6 +84,21 @@ describe('problem generation', () => {
       expect(problems.every(({ correctAnswer }) => correctAnswer >= 0)).toBe(true);
     }
   });
+
+  it('does not reveal an Advanced subtraction answer with a mirrored-sign pair', () => {
+    const seeds = [...Array.from({ length: 1_000 }, (_, seed) => seed), 436_538_625];
+    for (const seed of seeds) {
+      const problems = generateSession(
+        { operations: ['subtraction'], difficulty: 'advanced', questionCount: 20 },
+        new SeededRandom(seed),
+      );
+      for (const problem of problems) {
+        for (const choice of problem.choices) {
+          if (choice !== 0) expect(problem.choices).not.toContain(-choice);
+        }
+      }
+    }
+  });
 });
 
 describe('session generation', () => {

@@ -65,6 +65,11 @@ test('first launch, game, capsule, gallery, equip, and reload', async ({ page })
     page.getByRole('heading', { name: /First score|personal best|practice round/i }),
   ).toBeVisible();
   await expect(page.getByText('100%')).toBeVisible();
+  await page.getByRole('button', { name: 'Review questions' }).click();
+  await expect(page.getByRole('heading', { name: 'Review your questions' })).toBeVisible();
+  await expect(page.locator('.review-card')).toHaveCount(10);
+  await page.getByRole('button', { name: 'Back', exact: true }).last().click();
+  await expect(page.getByRole('button', { name: 'Review questions' })).toBeVisible();
   await page.getByRole('button', { name: 'Open a capsule' }).click();
   await page.getByRole('button', { name: 'Open capsule' }).click();
   await expect(page.getByRole('heading', { name: /You found/ })).toBeVisible();
@@ -133,7 +138,14 @@ test('history copies a name-free, versioned analysis export', async ({
   await page.getByRole('button', { name: 'Back home' }).click();
   await page.getByRole('button', { name: 'Your progress' }).click();
   await expect(page.getByRole('heading', { name: 'Play History' })).toBeVisible();
-  await expect(page.getByText('Ruleset 3').first()).toBeVisible();
+  await expect(page.getByText('Ruleset 6').first()).toBeVisible();
+  await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
+  await expect.poll(() => page.evaluate<number>('window.scrollY')).toBeGreaterThan(0);
+  await page.getByRole('button', { name: 'Review round' }).click();
+  await expect(page.getByRole('heading', { name: 'Review your questions' })).toBeVisible();
+  await expect.poll(() => page.evaluate<number>('window.scrollY')).toBe(0);
+  await page.getByRole('button', { name: 'Back', exact: true }).last().click();
+  await expect(page.getByRole('heading', { name: 'Play History' })).toBeVisible();
   await page.getByRole('button', { name: 'Copy analysis data' }).click();
   await expect(page.getByText('Copied! You can paste it into the chat.')).toBeVisible();
 
@@ -146,11 +158,84 @@ test('history copies a name-free, versioned analysis export', async ({
   };
   expect(analysis).toMatchObject({
     format: 'number-nook-play-history',
-    exportVersion: 2,
+    exportVersion: 3,
     privacy: { playerNameIncluded: false },
   });
   expect(analysis.sessions).toHaveLength(1);
   expect(clipboard).not.toContain('Ada');
+
+  await page.getByRole('button', { name: 'Clear play history' }).click();
+  await page.getByRole('button', { name: 'Confirm clear history' }).click();
+  await expect(page.locator('.history-overview article').first()).toContainText('0');
+  await expect(
+    page.getByText('Complete a round and its balance data will appear here.'),
+  ).toBeVisible();
+});
+
+test('history keeps large setup collections compact until expanded', async ({
+  page,
+  browserName,
+}) => {
+  test.skip(browserName !== 'chromium', 'The setup preview behavior is covered once in Chromium.');
+  await onboard(page);
+  await page.evaluate(() => {
+    const key = 'first-math-game:save';
+    const save = JSON.parse(localStorage.getItem(key) ?? '{}') as {
+      sessions: unknown[];
+    };
+    const settings = [
+      { operations: ['addition'], difficulty: 'easy', questionCount: 10 },
+      { operations: ['subtraction'], difficulty: 'easy', questionCount: 10 },
+      { operations: ['multiplication'], difficulty: 'easy', questionCount: 10 },
+      { operations: ['division'], difficulty: 'easy', questionCount: 10 },
+      { operations: ['addition'], difficulty: 'medium', questionCount: 10 },
+      { operations: ['addition'], difficulty: 'hard', questionCount: 10 },
+      { operations: ['addition'], difficulty: 'advanced', questionCount: 10 },
+      { operations: ['addition', 'subtraction'], difficulty: 'medium', questionCount: 10 },
+    ];
+    save.sessions = settings.map((gameSettings, index) => ({
+      id: `setup-preview-${index}`,
+      completedAt: new Date(Date.UTC(2026, 7, index + 1)).toISOString(),
+      settings: gameSettings,
+      seed: index + 1,
+      rulesetVersion: 6,
+      correctCount: 1,
+      accuracy: 1,
+      elapsedMs: 1_000,
+      score: 1_000,
+      coinsPotential: 1,
+      coinsEarned: 1,
+      answers: [
+        {
+          problemId: `setup-preview-question-${index}`,
+          skillKey: 'addition:1:1',
+          operation: 'addition',
+          left: 1,
+          right: 1,
+          choices: [2, 1, 3, 4],
+          correctChoiceIndex: 0,
+          selectedAnswer: 2,
+          correctAnswer: 2,
+          correct: true,
+          responseMs: 1_000,
+        },
+      ],
+    }));
+    localStorage.setItem(key, JSON.stringify(save));
+  });
+  await page.reload();
+  await page.getByRole('button', { name: 'Your progress' }).click();
+
+  await expect(page.locator('.session-history-card')).toHaveCount(5);
+  await page.getByRole('button', { name: 'Show all 8 rounds' }).click();
+  await expect(page.locator('.session-history-card')).toHaveCount(8);
+  await page.getByRole('button', { name: 'Show fewer rounds' }).click();
+  await expect(page.locator('.session-history-card')).toHaveCount(5);
+  await expect(page.locator('.configuration-card')).toHaveCount(6);
+  await page.getByRole('button', { name: 'Show all 8 setups' }).click();
+  await expect(page.locator('.configuration-card')).toHaveCount(8);
+  await page.getByRole('button', { name: 'Show fewer setups' }).click();
+  await expect(page.locator('.configuration-card')).toHaveCount(6);
 });
 
 test('onboarding, home, history, and setup have no detectable accessibility violations', async ({

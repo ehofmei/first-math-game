@@ -5,8 +5,10 @@ import { SeededRandom } from '../domain/random';
 import { summarizeSession } from '../domain/session';
 import {
   applyCompletedSession,
+  clearPlayHistory,
   createInitialSave,
   dailyCoinsRemaining,
+  DETAILED_SESSION_LIMIT,
   LocalStorageSaveRepository,
   updateSettings,
 } from './save';
@@ -29,10 +31,12 @@ describe('save data', () => {
     const repository = new LocalStorageSaveRepository();
     const save = createInitialSave(' Ada ', 'cozy-cats:sunny');
     expect(save.player.name).toBe('Ada');
-    expect(save.schemaVersion).toBe(3);
+    expect(save.schemaVersion).toBe(4);
     await repository.save(save);
     await expect(repository.load()).resolves.toEqual(save);
     expect(repository.parseImport(repository.export(save))).toEqual(save);
+    expect(storage.get(LocalStorageSaveRepository.key)).not.toContain('\n');
+    expect(repository.export(save)).toContain('\n');
   });
 
   it('migrates a version 1 save without losing progress', () => {
@@ -42,7 +46,7 @@ describe('save data', () => {
     void _dailyCoins;
     const migrated = repository.parseImport(JSON.stringify({ ...legacy, schemaVersion: 1 }));
     expect(migrated).toMatchObject({
-      schemaVersion: 3,
+      schemaVersion: 4,
       player: { name: 'Ada' },
       coins: 0,
       dailyCoins: { date: '', earned: 0 },
@@ -109,7 +113,7 @@ describe('save data', () => {
     };
 
     const migrated = repository.parseImport(JSON.stringify(legacyV2));
-    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.schemaVersion).toBe(4);
     expect(migrated.sessions[0]).toMatchObject({
       rulesetVersion: 1,
       coinsPotential: 15,
@@ -185,5 +189,115 @@ describe('save data', () => {
     const nextDay = applyCompletedSession(capped, makeSummary(4), '2026-01-03');
     expect(nextDay.coins).toBe(45);
     expect(nextDay.dailyCoins).toEqual({ date: '2026-01-03', earned: 15 });
+  });
+
+  it('retains thirty detailed rounds and rolls older sessions into lifetime progress', () => {
+    const initial = createInitialSave('Ada', 'cozy-cats:sunny');
+    const problems = generateSession(DEFAULT_SETTINGS, new SeededRandom(3));
+    const answers = problems.map((problem) => ({
+      problemId: problem.id,
+      skillKey: problem.skillKey,
+      operation: problem.operation,
+      left: problem.left,
+      right: problem.right,
+      choices: problem.choices,
+      correctChoiceIndex: problem.correctChoiceIndex,
+      selectedAnswer: problem.correctAnswer,
+      correctAnswer: problem.correctAnswer,
+      correct: true,
+      responseMs: 400,
+    }));
+    let save = initial;
+    for (let index = 0; index < 35; index += 1) {
+      const summary = summarizeSession(
+        problems,
+        answers,
+        DEFAULT_SETTINGS,
+        index + 1,
+        new FakeClock(index + 1),
+      );
+      save = applyCompletedSession(save, summary, '2026-01-02');
+    }
+
+    expect(save.sessions).toHaveLength(DETAILED_SESSION_LIMIT);
+    expect(save.archivedProgress.overall).toMatchObject({
+      rounds: 5,
+      questions: 50,
+      correct: 50,
+    });
+    expect(save.archivedProgress.configurations[0]).toMatchObject({ rounds: 5, questions: 50 });
+    expect(save.archivedProgress.operations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ operation: 'addition', rounds: 5, questions: 25 }),
+        expect.objectContaining({ operation: 'subtraction', rounds: 5, questions: 25 }),
+      ]),
+    );
+  });
+
+  it('migrates a version 3 save into retained detail and archived progress', () => {
+    const repository = new LocalStorageSaveRepository();
+    const initial = createInitialSave('Ada', 'cozy-cats:sunny');
+    const problems = generateSession(DEFAULT_SETTINGS, new SeededRandom(4));
+    const answers = problems.map((problem) => ({
+      problemId: problem.id,
+      skillKey: problem.skillKey,
+      operation: problem.operation,
+      left: problem.left,
+      right: problem.right,
+      choices: problem.choices,
+      correctChoiceIndex: problem.correctChoiceIndex,
+      selectedAnswer: problem.correctAnswer,
+      correctAnswer: problem.correctAnswer,
+      correct: true,
+      responseMs: 500,
+    }));
+    const sessions = Array.from({ length: 35 }, (_, index) =>
+      summarizeSession(problems, answers, DEFAULT_SETTINGS, index + 1, new FakeClock(index + 1)),
+    );
+    const { archivedProgress: _archivedProgress, ...withoutArchive } = initial;
+    void _archivedProgress;
+    const migrated = repository.parseImport(
+      JSON.stringify({ ...withoutArchive, schemaVersion: 3, sessions }),
+    );
+
+    expect(migrated.schemaVersion).toBe(4);
+    expect(migrated.sessions).toHaveLength(DETAILED_SESSION_LIMIT);
+    expect(migrated.archivedProgress.overall).toMatchObject({ rounds: 5, questions: 50 });
+  });
+
+  it('clears play statistics without removing currency, companions, or settings', () => {
+    const initial = {
+      ...createInitialSave('Ada', 'cozy-cats:sunny'),
+      coins: 42,
+      ownedCollectibleIds: ['cozy-cats:sunny', 'cozy-cats:moonbeam'],
+    };
+    const problems = generateSession(DEFAULT_SETTINGS, new SeededRandom(5));
+    const answers = problems.map((problem) => ({
+      problemId: problem.id,
+      skillKey: problem.skillKey,
+      operation: problem.operation,
+      left: problem.left,
+      right: problem.right,
+      choices: problem.choices,
+      correctChoiceIndex: problem.correctChoiceIndex,
+      selectedAnswer: problem.correctAnswer,
+      correctAnswer: problem.correctAnswer,
+      correct: true,
+      responseMs: 400,
+    }));
+    const withHistory = applyCompletedSession(
+      initial,
+      summarizeSession(problems, answers, DEFAULT_SETTINGS, 5, new FakeClock(5)),
+      '2026-01-02',
+    );
+    const cleared = clearPlayHistory(withHistory);
+
+    expect(cleared.sessions).toEqual([]);
+    expect(cleared.archivedProgress.overall.rounds).toBe(0);
+    expect(cleared).toMatchObject({
+      coins: withHistory.coins,
+      ownedCollectibleIds: initial.ownedCollectibleIds,
+      settings: initial.settings,
+    });
   });
 });

@@ -100,6 +100,8 @@ describe('composition rules', () => {
     expect(compositionTargets(10, 'easy')).toEqual({ maximumLow: 3, minimumFocus: 0 });
     expect(compositionTargets(5, 'medium')).toEqual({ maximumLow: 1, minimumFocus: 2 });
     expect(compositionTargets(20, 'hard')).toEqual({ maximumLow: 2, minimumFocus: 12 });
+    expect(compositionTargets(3, 'advanced')).toEqual({ maximumLow: 1, minimumFocus: 2 });
+    expect(compositionTargets(3, 'hard')).toEqual({ maximumLow: 1, minimumFocus: 1 });
     expect(tableValueLimit(5, 'hard')).toBe(2);
     expect(tableValueLimit(10, 'medium')).toBe(3);
     expect(tableValueLimit(20, 'easy')).toBe(8);

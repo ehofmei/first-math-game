@@ -9,6 +9,8 @@ Related references:
 - [Research and product design](../DESIGN_RESEARCH.md)
 - [Testing strategy](./TEST_STRATEGY.md)
 - [Problem generation and session composition](./PROBLEM_GENERATION.md)
+- [Addition and subtraction generation](./ADDITION_SUBTRACTION_GENERATION.md)
+- [Round review and play-history retention](./PLAY_HISTORY.md)
 
 ## Delivery principles
 
@@ -338,14 +340,14 @@ Folders should be introduced only when needed; this is a target shape, not a req
 
 Add one independently verified slice at a time:
 
-1. Subtraction, including nonnegative constraints and borrow-aware difficulty.
-2. Multiplication with curated table presets, constrained session composition, and expandable individual selection.
-3. Division generated from divisor and quotient to guarantee whole-number results, with explicit limits on identity and other low-challenge facts.
-4. Mixed operations with balanced short-session coverage.
+1. ~~Subtraction, including nonnegative constraints and borrow-aware difficulty.~~ Completed in ruleset version 4.
+2. ~~Multiplication with curated table presets and constrained session composition.~~ Completed in ruleset version 3.
+3. ~~Division generated from divisor and quotient with explicit low-challenge limits.~~ Completed in ruleset version 3.
+4. ~~Mixed operations with balanced short-session coverage.~~ Completed.
 5. Practice mode retry and hint representations.
 6. Time Rush and Endless.
 7. Per-skill mastery and guided-random weighting.
-8. Progress dashboard and 30-day history.
+8. ~~Question-level round review and bounded local play history.~~ Completed with a 30-round detailed window and lifetime aggregates. A richer progress dashboard remains future work.
 9. Weekly three-day goal and daily completion bonus.
 10. Direct-purchase shop and tuned rarity economy.
 11. Improvement Duel after at least five comparable sessions.

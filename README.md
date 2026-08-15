@@ -12,7 +12,9 @@ The first playable vertical slice is implemented. It includes onboarding, a star
 - [Adding collectible content](./docs/ADDING_CONTENT.md) — the catalog, asset, rarity, and validation workflow for new cats and Special Guests.
 - [Economy tuning](./docs/ECONOMY.md) — current Paw Coin earnings, daily limits, capsule pricing, rationale, and safe tuning points.
 - [Balance analysis](./docs/BALANCE_ANALYSIS.md) — play-history export fields, comparison workflow, simulation strategy, and controls for stable tuning.
+- [Round review and history retention](./docs/PLAY_HISTORY.md) — question review, bounded detailed history, lifetime aggregates, migration, exports, and clearing test data.
 - [Problem generation](./docs/PROBLEM_GENERATION.md) — constrained-random session composition, difficulty bands, variety limits, versioning, and acceptance criteria.
+- [Addition and subtraction generation](./docs/ADDITION_SUBTRACTION_GENERATION.md) — carrying, borrowing, identity, negative-answer, and variety rules introduced in ruleset version 4.
 
 ## Current direction
 
@@ -26,7 +28,7 @@ The first playable vertical slice is implemented. It includes onboarding, a star
 
 ## Current status
 
-Milestones 0 and 1 and the first end-to-end slice are in place. Addition, subtraction, multiplication, division, constrained version 3 multiplication/division composition, Easy through Advanced difficulties, and 10–50 question rounds are playable. The automated suite covers deterministic math and composition rules, rewards, save migration and round-trips, real-browser components, the complete player journey, accessibility, phone/tablet layouts, and production offline reloads. Development and play-testing are currently local on a Mac; the site has not yet been deployed.
+Milestones 0 and 1 and the first end-to-end slice are in place. Addition, subtraction, multiplication, division, constrained version 3 multiplication/division composition, constrained version 4 addition/subtraction composition, the version 5 signed-distractor correction, the version 6 Advanced short-round correction, Easy through Advanced difficulties, and 10–50 question rounds are playable. Completed rounds can be reviewed question by question, while the newest 30 rounds retain full detail and older rounds remain in compact lifetime statistics. The automated suite covers deterministic math and composition rules, rewards, save migration and round-trips, history retention, real-browser components, the complete player journey, accessibility, phone/tablet layouts, and production offline reloads. The PWA is deployed through GitHub Pages while active play-testing continues.
 
 ## Run locally
 

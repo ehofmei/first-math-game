@@ -9,6 +9,7 @@ export default defineConfig({
       reporter: ['text', 'json-summary', 'html'],
       include: [
         'src/analytics/**/*.ts',
+        'src/companions/**/*.ts',
         'src/domain/**/*.ts',
         'src/content/**/*.ts',
         'src/storage/**/*.ts',

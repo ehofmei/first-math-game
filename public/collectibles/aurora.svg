@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1">
+      <stop stop-color="#30245f" />
+      <stop offset="1" stop-color="#a87cc5" />
+    </linearGradient>
+    <linearGradient id="aurora" x2="1">
+      <stop stop-color="#75dfc2" />
+      <stop offset=".5" stop-color="#f3a8bd" />
+      <stop offset="1" stop-color="#ad91ef" />
+    </linearGradient>
+    <clipPath id="face">
+      <path d="M200 104c64 0 106 47 106 111 18 20 10 48-14 57-12 35-45 57-92 57s-80-22-92-57c-24-9-32-37-14-57 0-64 42-111 106-111Z" />
+    </clipPath>
+  </defs>
+  <rect width="400" height="400" rx="88" fill="url(#bg)" />
+  <path d="M17 310q93-72 183-29t184-42" fill="none" stroke="url(#aurora)" stroke-width="24" stroke-linecap="round" opacity=".75" />
+  <path
+    d="m109 159 15-107 70 79m97 28-15-107-70 79"
+    fill="#fff2e8"
+    stroke="#d9c3d4"
+    stroke-width="10"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M200 104c64 0 106 47 106 111 18 20 10 48-14 57-12 35-45 57-92 57s-80-22-92-57c-24-9-32-37-14-57 0-64 42-111 106-111Z"
+    fill="#fff2e8"
+  />
+  <g clip-path="url(#face)">
+    <path d="M102 145q82-47 199 15l-11 45q-105-59-186-10Z" fill="url(#aurora)" opacity=".9" />
+  </g>
+  <ellipse cx="158" cy="212" rx="18" ry="23" fill="#7454a8" />
+  <ellipse cx="242" cy="212" rx="18" ry="23" fill="#7454a8" />
+  <ellipse cx="158" cy="217" rx="7" ry="13" fill="#2f245c" />
+  <ellipse cx="242" cy="217" rx="7" ry="13" fill="#2f245c" />
+  <circle cx="153" cy="204" r="5" fill="#fff" />
+  <circle cx="237" cy="204" r="5" fill="#fff" />
+  <path d="m187 245 13 12 13-12-13-8Z" fill="#e58da5" />
+  <path d="M169 271q31 24 62 0" fill="none" stroke="#5b426d" stroke-width="8" stroke-linecap="round" />
+  <path d="M139 312q61-25 122 0l31 54H108Z" fill="#f7e4ec" opacity=".95" />
+  <path d="m200 298 26 28-26 31-26-31Z" fill="url(#aurora)" stroke="#75569c" stroke-width="7" stroke-linejoin="round" />
+</svg>

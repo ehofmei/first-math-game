@@ -1,8 +1,39 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
-  <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#fff1b8"/><stop offset="1" stop-color="#ffc56e"/></linearGradient></defs>
-  <rect width="400" height="400" rx="88" fill="url(#b)"/><circle cx="200" cy="213" r="112" fill="#f5a83c"/>
-  <path d="m111 153 16-92 67 66m95 26-16-92-67 66" fill="#f5a83c" stroke="#d98125" stroke-width="10" stroke-linejoin="round"/>
-  <ellipse cx="160" cy="210" rx="15" ry="19" fill="#392d4b"/><ellipse cx="240" cy="210" rx="15" ry="19" fill="#392d4b"/>
-  <path d="m187 244 13 12 13-12-13-8Z" fill="#ed7180"/><path d="M165 269q35 30 70 0" fill="none" stroke="#392d4b" stroke-width="10" stroke-linecap="round"/>
-  <circle cx="305" cy="300" r="38" fill="#fff4ca"/><path d="M305 277v46m-23-23h46" stroke="#f5a000" stroke-width="10" stroke-linecap="round"/>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1">
+      <stop stop-color="#fff4c9" />
+      <stop offset="1" stop-color="#ffc56e" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="88" fill="url(#bg)" />
+  <path
+    d="m111 156 16-95 66 67m96 28-16-95-66 67"
+    fill="#f5a83c"
+    stroke="#d98125"
+    stroke-width="10"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M200 105c67 0 112 48 112 111 0 67-42 111-112 111S88 283 88 216c0-63 45-111 112-111Z"
+    fill="#f5a83c"
+  />
+  <path d="m183 123 17-19 17 19-17 17Z" fill="#ffd36d" />
+  <ellipse cx="159" cy="209" rx="17" ry="21" fill="#392d4b" />
+  <ellipse cx="241" cy="209" rx="17" ry="21" fill="#392d4b" />
+  <circle cx="154" cy="202" r="5" fill="#fff4d3" />
+  <circle cx="236" cy="202" r="5" fill="#fff4d3" />
+  <ellipse cx="173" cy="247" rx="28" ry="20" fill="#ffd08a" opacity=".65" />
+  <ellipse cx="227" cy="247" rx="28" ry="20" fill="#ffd08a" opacity=".65" />
+  <path d="m187 241 13 12 13-12-13-8Z" fill="#ed7180" />
+  <path
+    d="M168 268q32 27 64 0M148 249l-39-6m40 20-38 6m141-20 39-6m-40 20 38 6"
+    fill="none"
+    stroke="#392d4b"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+  <g transform="translate(306 302)" stroke="#ef9d00" stroke-width="8" stroke-linecap="round">
+    <circle r="23" fill="#fff4ca" />
+    <path d="M0-38v9M0 29v9M-38 0h9M29 0h9M-27-27l7 7m40 40 7 7M27-27l-7 7m-40 40-7 7" />
+  </g>
 </svg>

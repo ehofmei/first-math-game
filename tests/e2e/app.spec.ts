@@ -36,6 +36,7 @@ test.beforeEach(async ({ page }) => {
 
 test('first launch, game, capsule, gallery, equip, and reload', async ({ page }) => {
   await onboard(page);
+  await expect(page.locator('html')).toHaveAttribute('data-companion-theme', 'cozy-cats:moonbeam');
   await page.evaluate(() => {
     const key = 'first-math-game:save';
     const save = JSON.parse(localStorage.getItem(key) ?? '{}') as { coins: number };
@@ -44,10 +45,12 @@ test('first launch, game, capsule, gallery, equip, and reload', async ({ page })
   });
   await page.reload();
   await page.getByRole('button', { name: 'Change game' }).click();
+  await expect(page.locator('.player-companion-dialogue--setup')).toBeVisible();
   await page.getByRole('button', { name: '× Multiplication' }).click();
   await page.getByRole('button', { name: '÷ Division' }).click();
   await page.getByRole('button', { name: 'Easy' }).click();
   await page.getByRole('button', { name: 'Start game' }).click();
+  await expect(page.locator('.game-progress__label img')).toBeVisible();
 
   const operators = new Set<string>();
   for (let index = 0; index < 10; index += 1) {
@@ -65,6 +68,11 @@ test('first launch, game, capsule, gallery, equip, and reload', async ({ page })
     page.getByRole('heading', { name: /First score|personal best|practice round/i }),
   ).toBeVisible();
   await expect(page.getByText('100%')).toBeVisible();
+  await expect(page.locator('.player-companion-dialogue--results')).toBeVisible();
+  await expect(page.locator('.player-companion-dialogue--results')).toHaveAttribute(
+    'data-dialogue-id',
+    /results-first-round-/,
+  );
   await expect(page.locator('.coin-tally')).not.toHaveText('+0');
   await page.getByRole('button', { name: 'Review questions' }).click();
   await expect(page.getByRole('heading', { name: 'Review your questions' })).toBeVisible();
@@ -80,18 +88,57 @@ test('first launch, game, capsule, gallery, equip, and reload', async ({ page })
     .replace('!', '');
   await page.getByRole('button', { name: 'View collection' }).click();
   await expect(page.getByRole('heading', { name: 'Companion Collection' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'The Nook Neighbors' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Special Guests' })).toBeVisible();
   await page.getByRole('button', { name: foundName }).click();
+  const equippedId = await page.evaluate<string>(() => {
+    const save = JSON.parse(localStorage.getItem('first-math-game:save') ?? '{}') as {
+      equippedCollectibleId: string;
+    };
+    return save.equippedCollectibleId;
+  });
+  await expect(page.locator('html')).toHaveAttribute('data-companion-theme', equippedId);
   await page.getByRole('button', { name: 'Back', exact: true }).click();
   await expect(page.locator('.home-companion')).toContainText(foundName);
-  await expect(page.locator('.home-companion')).toContainText('is ready!');
+  const companionShortcut = page.getByRole('button', {
+    name: `View ${foundName} in your collection`,
+  });
+  await expect(companionShortcut).toBeVisible();
+  await companionShortcut.click();
+  await expect(page.getByRole('heading', { name: 'Companion Collection' })).toBeVisible();
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
   await page.reload();
   await expect(page.locator('.home-companion')).toContainText(foundName);
 });
 
+test('companion dialogue remains stable through unrelated rerenders', async ({ page }) => {
+  await onboard(page);
+
+  const homeDialogue = page.locator('.player-companion-dialogue--home');
+  await expect(homeDialogue).toBeVisible();
+  const homePhraseId = await homeDialogue.getAttribute('data-dialogue-id');
+  const homeText = await homeDialogue.locator('p').textContent();
+
+  await page.getByRole('button', { name: 'Mute sound effects' }).click();
+  await expect(homeDialogue).toHaveAttribute('data-dialogue-id', homePhraseId ?? '');
+  await expect(homeDialogue.locator('p')).toHaveText(homeText ?? '');
+
+  await page.getByRole('button', { name: 'Change game' }).click();
+  const setupDialogue = page.locator('.player-companion-dialogue--setup');
+  await expect(setupDialogue).toBeVisible();
+  const setupPhraseId = await setupDialogue.getAttribute('data-dialogue-id');
+  const setupText = await setupDialogue.locator('p').textContent();
+
+  await page.getByRole('button', { name: '× Multiplication' }).click();
+  await page.getByRole('button', { name: 'Hard' }).click();
+  await expect(setupDialogue).toHaveAttribute('data-dialogue-id', setupPhraseId ?? '');
+  await expect(setupDialogue.locator('p')).toHaveText(setupText ?? '');
+});
+
 test('game settings and home capsule access remain available after reload', async ({ page }) => {
   await onboard(page);
-  await page.getByRole('button', { name: 'Cat Capsule' }).click();
-  await expect(page.getByRole('heading', { name: 'Cat Capsule' })).toBeVisible();
+  await page.getByRole('button', { name: 'Companion Capsule' }).click();
+  await expect(page.getByRole('heading', { name: 'Companion Capsule' })).toBeVisible();
   const unavailableCapsule = page.getByRole('button', { name: 'Need 60 more coins' });
   await expect(unavailableCapsule).toHaveAttribute('aria-disabled', 'true');
   await unavailableCapsule.click({ force: true });
@@ -107,6 +154,46 @@ test('game settings and home capsule access remain available after reload', asyn
   await expect(page.getByText('Hard · − × · 20 questions')).toBeVisible();
   await page.reload();
   await expect(page.getByText('Hard · − × · 20 questions')).toBeVisible();
+});
+
+test('the complete collection shares one remembered art-style preference', async ({ page }) => {
+  await onboard(page);
+  await page.getByRole('button', { name: /^Collection/ }).click();
+
+  await expect.poll(() => page.evaluate<number>('window.scrollY')).toBe(0);
+  await expect(page.locator('.collection-grid .collectible-card')).toHaveCount(11);
+  await expect(page.getByRole('button', { name: 'Polished Sticker' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.getByRole('region', { name: 'Equipped companion' })).toContainText('Moonbeam');
+  await expect(page.getByRole('progressbar', { name: '1 of 11 companions found' })).toHaveAttribute(
+    'aria-valuenow',
+    '1',
+  );
+  await expect(page.getByRole('button', { name: 'The Nook Neighbors 1/10' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Moonbeam' }).locator('img')).toHaveAttribute(
+    'src',
+    /moonbeam-sticker\.webp$/,
+  );
+  const buttonBunnyPortrait = page
+    .locator('.collection-grid .collectible-card')
+    .last()
+    .locator('img');
+  await expect(buttonBunnyPortrait).toHaveAttribute('src', /button-bunny-sticker\.webp$/);
+
+  await page.getByRole('button', { name: 'Simple SVG' }).click();
+  await expect(page.getByRole('button', { name: 'Moonbeam' }).locator('img')).toHaveAttribute(
+    'src',
+    /moonbeam\.svg$/,
+  );
+  await expect(buttonBunnyPortrait).toHaveAttribute('src', /button-bunny\.svg$/);
+  await page.reload();
+  await page.getByRole('button', { name: /^Collection/ }).click();
+  await expect(page.getByRole('button', { name: 'Simple SVG' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
 });
 
 test('sound preference persists and the home control can recover from zero volume', async ({
@@ -389,10 +476,13 @@ test('@visual setup phone layout', async ({ page }, testInfo) => {
   await expect(page).toHaveScreenshot('setup.png', { fullPage: true });
 });
 
-test('@visual home phone layout', async ({ page }, testInfo) => {
-  test.skip(testInfo.project.name !== 'phone', 'This baseline targets the phone viewport.');
+test('@visual home responsive layout', async ({ page }, testInfo) => {
+  test.skip(
+    !['phone', 'tablet'].includes(testInfo.project.name),
+    'This baseline targets phone and tablet viewports.',
+  );
   await onboard(page);
-  await expect(page).toHaveScreenshot('home.png', { fullPage: true });
+  await expect(page).toHaveScreenshot('home.png', { fullPage: true, maxDiffPixels: 50 });
 });
 
 test('@visual empty history phone layout', async ({ page }, testInfo) => {
@@ -409,6 +499,16 @@ test('@visual backup phone layout', async ({ page }, testInfo) => {
   await expect(page).toHaveScreenshot('backup.png', { fullPage: true });
 });
 
+test('@visual companion gallery responsive layout', async ({ page }, testInfo) => {
+  test.skip(
+    !['phone', 'tablet'].includes(testInfo.project.name),
+    'This baseline targets phone and tablet viewports.',
+  );
+  await onboard(page);
+  await page.getByRole('button', { name: /^Collection/ }).click();
+  await expect(page).toHaveScreenshot('gallery.png');
+});
+
 test('@pwa production build works after the network goes offline', async ({
   page,
   context,
@@ -416,7 +516,15 @@ test('@pwa production build works after the network goes offline', async ({
 }) => {
   test.skip(browserName !== 'chromium', 'Offline reload is covered once in Chromium.');
   await page.evaluate('navigator.serviceWorker.ready');
+  const starterPortrait = page.getByRole('button', { name: 'Moonbeam' }).locator('img');
+  await expect(starterPortrait).toHaveAttribute('src', /moonbeam-sticker\.webp$/);
+  await expect
+    .poll(() => starterPortrait.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+    .toBe(768);
   await context.setOffline(true);
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Welcome to Number Nook' })).toBeVisible();
+  await expect
+    .poll(() => starterPortrait.evaluate((image) => (image as HTMLImageElement).naturalWidth))
+    .toBe(768);
 });

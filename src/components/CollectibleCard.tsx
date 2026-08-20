@@ -1,4 +1,5 @@
-import type { CollectibleDefinition } from '../content/schema';
+import type { ArtStyle, CollectibleDefinition } from '../content/schema';
+import { getCollectibleImage } from '../content/catalog';
 
 interface CollectibleCardProps {
   collectible: CollectibleDefinition;
@@ -6,6 +7,7 @@ interface CollectibleCardProps {
   equipped?: boolean;
   selected?: boolean;
   compact?: boolean;
+  artStyle?: ArtStyle;
   onSelect?: () => void;
 }
 
@@ -15,13 +17,14 @@ export function CollectibleCard({
   equipped = false,
   selected = false,
   compact = false,
+  artStyle = 'classic',
   onSelect,
 }: CollectibleCardProps) {
   const content = (
     <>
       <div className={`collectible-art ${owned ? '' : 'collectible-art--locked'}`}>
         <img
-          src={`${import.meta.env.BASE_URL}${collectible.image}`}
+          src={`${import.meta.env.BASE_URL}${getCollectibleImage(collectible, artStyle)}`}
           alt={owned ? collectible.altText : ''}
         />
         {!owned && (
@@ -33,7 +36,7 @@ export function CollectibleCard({
       <div className="collectible-copy">
         <div className="collectible-heading">
           <strong>{owned ? collectible.name : 'Mystery companion'}</strong>
-          {collectible.kind === 'guest' && owned && <span className="guest-badge">Guest</span>}
+          {collectible.specialGuest && owned && <span className="guest-badge">Guest</span>}
         </div>
         <span className={`rarity rarity--${collectible.rarity}`}>{collectible.rarity}</span>
         {!compact && owned && <p>{collectible.description}</p>}

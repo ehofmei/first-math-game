@@ -34,7 +34,7 @@ The first vertical slice proves one complete player journey:
 4. Configure an Easy, ten-question addition game.
 5. Play with four answer choices, a subtle count-up timer, and a short feedback beat.
 6. Complete the round and see accuracy, elapsed time, a simple improvement message, score, and Paw Coins.
-7. Spend coins on a duplicate-protected Cat Capsule.
+7. Spend coins on the duplicate-protected Companion Capsule.
 8. Reveal a collectible and view it in the unified gallery.
 9. Equip the collectible and see it on the home screen.
 10. Reload the app and confirm that identity, settings, progress, currency, ownership, and equipped state persist.
@@ -354,22 +354,25 @@ Add one independently verified slice at a time:
 10. Direct-purchase shop and tuned rarity economy.
 11. Improvement Duel after at least five comparable sessions.
 12. Final collectible art and expanded repository packs.
-13. Optional speech and sound. The synthesized contextual-effects pass and development Sound Lab are complete; subjective cue refinement, music, and spoken problems remain future work.
+13. Companion personality dialogue, reusable CSS motion/motif profiles, and a development Companion Lab. The contract, engine, lab, and first player-facing Home/Setup/Results integration are complete; Capsule, equip confirmation, and progress dialogue are the next optional expansion.
+14. Optional speech and sound. The synthesized contextual-effects pass and development Sound Lab are complete; subjective cue refinement, music, and spoken problems remain future work.
 
 Each operation must ship with its generator invariants, distractor rules, difficulty tests, UI behavior, progress aggregation, and end-to-end coverage. “Adding the operation” is not complete when only the equation generator exists.
 
 ## Content-update workflow
 
-When adding a cat or Guest:
+When adding a companion or Special Guest:
 
 1. Choose a permanent stable ID.
 2. Add the catalog definition, art, thumbnail, alt text, rarity, capsule weight, shop price, and personality.
 3. Run content validation and asset-size checks.
 4. Confirm gallery card, silhouette, shop preview, capsule reveal, equipped state, and narrow-layout rendering in the state gallery.
 5. Run the capsule statistical tests with the expanded pool.
-6. Decide whether to bundle ordinary cats with a new Special Guest so rarity weighting remains meaningful for established players.
+6. Decide whether to bundle ordinary companions with a new Special Guest so rarity weighting remains meaningful for established players.
 7. Build and test the update path using an older save fixture.
 8. Deploy only after verification passes.
+
+Catalog version 2.2 separates collection, species, rarity, and Special Guest status while preserving stable existing IDs. The complete Nook Neighbors roster and Button Bunny now have per-companion themes and both Classic/Sticker assets; the remembered art-style preference and setup, game-header, results, home-shortcut, and collection-spotlight placements are implemented. Companion Capsule is the species-neutral reward name. Content validation, production caching, and phone/tablet regression coverage protect the expansion path. The complete decision is recorded in [Companion Identity, Themes, and Presence](./COMPANION_SYSTEM.md).
 
 ## Completion policy
 

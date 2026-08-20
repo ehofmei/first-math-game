@@ -8,7 +8,12 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['icon.svg'],
+      includeAssets: [
+        'icon.svg',
+        'collectibles/sunny-sticker.webp',
+        'collectibles/moonbeam-sticker.webp',
+        'collectibles/pepper-sticker.webp',
+      ],
       manifest: {
         id: './',
         name: 'First Math Game',
@@ -30,8 +35,23 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,webp,png,json}'],
+        globPatterns: ['**/*.{js,css,html,svg,json}'],
         navigateFallback: 'index.html',
+        runtimeCaching: [
+          {
+            urlPattern: ({ url }) =>
+              url.pathname.includes('/collectibles/') && /\.(?:png|webp|avif)$/i.test(url.pathname),
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'number-nook-sticker-art-v1',
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 365,
+              },
+            },
+          },
+        ],
       },
       devOptions: { enabled: false },
     }),

@@ -3,6 +3,7 @@ dist/
 coverage/
 playwright-report/
 test-results/
+.vitest-attachments/
 .DS_Store
 *.local
 *.log

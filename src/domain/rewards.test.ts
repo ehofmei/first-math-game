@@ -29,7 +29,7 @@ describe('capsule rewards', () => {
   });
 
   it('guarantees the only remaining Special Guest', () => {
-    const guest = catalog.collectibles.find(({ kind }) => kind === 'guest');
+    const guest = catalog.collectibles.find(({ specialGuest }) => specialGuest);
     expect(guest).toBeDefined();
     const owned = catalog.collectibles.filter(({ id }) => id !== guest?.id).map(({ id }) => id);
     expect(chooseCapsuleReward(catalog.collectibles, owned, new SeededRandom(1))).toEqual(guest);

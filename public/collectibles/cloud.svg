@@ -1,8 +1,41 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
-  <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#e3f8ff"/><stop offset="1" stop-color="#8fd3ec"/></linearGradient></defs>
-  <rect width="400" height="400" rx="88" fill="url(#b)"/><circle cx="200" cy="213" r="112" fill="#fff"/>
-  <path d="m111 153 16-92 67 66m95 26-16-92-67 66" fill="#fff" stroke="#d4edf5" stroke-width="10" stroke-linejoin="round"/>
-  <ellipse cx="160" cy="210" rx="15" ry="19" fill="#34536a"/><ellipse cx="240" cy="210" rx="15" ry="19" fill="#34536a"/>
-  <path d="m187 244 13 12 13-12-13-8Z" fill="#ec96a3"/><path d="M168 268q32 26 64 0" fill="none" stroke="#34536a" stroke-width="10" stroke-linecap="round"/>
-  <path d="M80 324q28-44 66-14 20-61 69-15 42-32 73 14 34-14 48 15Z" fill="#effbff"/>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1">
+      <stop stop-color="#e8fbff" />
+      <stop offset="1" stop-color="#8fd3ec" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="88" fill="url(#bg)" />
+  <path
+    d="m108 157 20-96 66 69m98 27-20-96-66 69"
+    fill="#fff"
+    stroke="#c5e6f1"
+    stroke-width="10"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M200 105c60 0 101 33 109 88 30 28 15 75-23 83-8 34-41 54-86 54s-78-20-86-54c-38-8-53-55-23-83 8-55 49-88 109-88Z"
+    fill="#fff"
+  />
+  <path d="M151 130q49-36 98 0-17 2-27 22-22-20-44 0-10-20-27-22Z" fill="#92d8ef" />
+  <path d="m117 106 11-45 38 40-28 9Z" fill="#a7e1f2" />
+  <ellipse cx="158" cy="211" rx="17" ry="21" fill="#34536a" />
+  <ellipse cx="242" cy="211" rx="17" ry="21" fill="#34536a" />
+  <circle cx="153" cy="204" r="5" fill="#fff" />
+  <circle cx="237" cy="204" r="5" fill="#fff" />
+  <path d="m187 243 13 12 13-12-13-8Z" fill="#ec96a3" />
+  <path
+    d="M168 270q32 25 64 0M144 251l-36-7m37 21-35 8m145-22 36-7m-37 21 35 8"
+    fill="none"
+    stroke="#34536a"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+  <path
+    d="M68 329c12-29 44-38 65-18 8-37 53-49 76-18 30-23 70-5 75 23 29-13 52 2 59 28H70Z"
+    fill="#effbff"
+    stroke="#cbeaf4"
+    stroke-width="7"
+    stroke-linejoin="round"
+  />
 </svg>

@@ -24,14 +24,18 @@ It is a design document, not a final implementation specification. Decisions mar
 - The collection includes a gallery for viewing all owned collectibles; the three-item shelf is only a home-screen showcase.
 - Speech is an experiment or later enhancement, not a core-release dependency.
 - A handicap-style Improvement Duel is worth planning for after the MVP: each participant competes against a personal baseline.
-- The catalog must support cats and non-cat “Guest” collectibles without special-case application code.
+- The catalog must support cats and ordinary companions of other species without special-case application code.
 - All collectible content ships through repository updates; there is no local content import or in-app collectible creator.
-- Guests participate in the same gallery, capsule, shop, and ownership systems as cats and normally use Special rarity.
-- Special rarity is reserved for Guests and exceptional one-off collectibles; ordinary cats top out at Legendary.
+- Species, collection, rarity, and Special Guest status are independent catalog concepts. Non-cat companions do not automatically become Guests.
+- Special Guests participate in the same gallery, capsule, shop, ownership, theme, and equip systems as ordinary companions and use Special rarity. Ordinary companions of any species top out at Legendary.
 - Guests appear inline in the unified collection with a visible Guest badge and optional gallery filter.
 - Locked gallery entries use silhouettes, while the direct-purchase shop reveals full artwork and personality text.
 - If a completed collector receives an update with one new item, duplicate protection makes that item the next capsule reward.
-- Content updates may bundle ordinary cats with a new Special Guest when preserving meaningful rarity weighting is desirable.
+- Content updates may bundle ordinary companions with a new Special Guest when preserving meaningful rarity weighting is desirable.
+- Cats remain the catalog's center of gravity, while future collections may feature dogs, birds, or other family-friendly species.
+- Equipping a companion applies a restrained, accessible interface theme based on that companion's palette; correct and incorrect feedback colors remain stable.
+- The equipped companion appears prominently at home and on results, compactly during setup, and as a small static portrait outside the equation and answer area during play.
+- Paw Coins and a cat mascot icon remain appropriate for the broader companion catalog. The generic reward is now named Companion Capsule so Special Guests and future species never appear to come from a cats-only system.
 - Rarity affects presentation, capsule odds, and direct-purchase price.
 - Both random capsules and much more expensive direct purchases are available.
 - Every collectible has a name and short personality/flavor text.
@@ -56,7 +60,7 @@ The first release should support:
 - Optional-but-prominent speed play.
 - One local player name and progress record per device.
 - Local progress, statistics, personal bests, and export/import.
-- A cat-centered but extensible collectible reward layer, including non-cat Guests, a full gallery, and lightweight customization.
+- A cat-centered but species-flexible companion reward layer, including themed collections, Special Guests, a full gallery, and lightweight customization.
 - Responsive phone and tablet layouts.
 - PWA installation and offline play through GitHub Pages.
 - Full playability without speech, music, or sound.
@@ -116,7 +120,7 @@ Systematic reviews generally find that game-based mathematics can improve engage
 
 Design consequences:
 
-- Give meaningful choices: operation, difficulty, session type, active cat, and desired reward.
+- Give meaningful choices: operation, difficulty, session type, active companion, and desired reward.
 - Set attainable goals and show specific evidence of growing competence.
 - Avoid making points and prizes the only reason to play.
 - Reward completion and improvement, not only perfect performance.
@@ -505,13 +509,13 @@ Family members contribute completed questions toward a shared weekly target that
 
 ### Recommended MVP structure
 
-- Start with 12–24 collectible cats across a few rarity tiers.
+- Start with a cat-led collectible roster across a few rarity tiers, then expand through species-focused collections.
 - Each has a stable ID, name, portrait, flavor text, rarity, and content-pack ID.
-- The underlying system calls these items `Collectible`; “Cats” remains the main player-facing theme.
-- Non-cat characters can appear as `Guest` collectibles without changing inventory, shop, gallery, or reward logic.
+- The underlying system calls these items `Collectible`, while player-facing copy generally uses `Companion`.
+- Ordinary non-cat companions and exceptional Special Guests use the same inventory, shop, gallery, theme, and reward logic as cats.
 - Completing sessions earns Paw Coins.
 - Coins can be spent on either:
-  - A surprise Cat Capsule.
+  - A surprise Companion Capsule using the same duplicate-protected reward rules for every species and Special Guest.
   - A rotating or complete catalog with fixed prices.
 - The full gallery shows every owned collectible and silhouettes or metadata for undiscovered items as configured by its content pack.
 - Any compatible owned collectible can be equipped as the active companion/avatar.
@@ -556,13 +560,19 @@ interface ContentPack {
 
 interface CollectibleDefinition {
   id: string;
+  collectionId: string;
   name: string;
-  kind: "cat" | "guest";
+  species: string;
+  specialGuest: boolean;
   rarity: "common" | "uncommon" | "rare" | "legendary" | "special";
   description?: string;
-  image: ContentAssetReference;
+  art: {
+    classic?: ContentAssetReference;
+    sticker?: ContentAssetReference;
+  };
   thumbnail?: ContentAssetReference;
   altText: string;
+  theme: CompanionTheme;
   tags?: string[];
   capsuleEligible: boolean;
   capsuleWeight: number;
@@ -583,20 +593,20 @@ Adding content is a developer workflow:
 5. The PWA detects the new build and offers an update at a safe point outside an active session.
 6. After updating, new items appear as unowned entries in the existing gallery, capsule pool, and shop without changing prior progress.
 
-Cats and Guests use exactly the same ownership and acquisition code. `kind` affects badges and gallery filtering, while `rarity` controls visual treatment, capsule weight, and direct-purchase price. `special` is reserved for Guests and exceptional one-off collectibles; ordinary cats top out at `legendary`.
+Every species and Special Guest uses exactly the same ownership and acquisition code. `collectionId` organizes related content, `species` supports optional dynamic filtering, and `specialGuest` controls the Guest badge. Rarity controls visual treatment, capsule weight, and direct-purchase price. `special` is reserved for entries explicitly marked as Special Guests; ordinary companions of every species top out at `legendary`.
 
 For the initial economy, every collectible should be available through both paths unless a future design explicitly needs an exception:
 
-- **Cat Capsule:** cheaper, random, and weighted by rarity among eligible unowned items. It always awards a new item until every capsule-eligible item is owned.
+- **Companion Capsule:** cheaper, random, and weighted by rarity among eligible unowned items. It always awards a new item until every capsule-eligible item is owned.
 - **Direct shop purchase:** substantially more expensive, but lets the player choose the exact item.
 
 Buying an item directly removes it from the unowned capsule pool. Lower weights make rare, legendary, and special items less likely while a broad pool remains; duplicate protection means they eventually become guaranteed as the pool is completed. This tradeoff is intentional: rarity changes anticipation and acquisition order without making completion depend on endless duplicates.
 
-If a player already owns every collectible and an update adds one new item, that item is necessarily the next capsule reward. This is desirable catch-up behavior for an established player. When an update should preserve suspense around a new Special Guest, it can ship that Guest alongside several new ordinary cats so rarity weighting remains meaningful.
+If a player already owns every collectible and an update adds one new item, that item is necessarily the next capsule reward. This is desirable catch-up behavior for an established player. When an update should preserve suspense around a new Special Guest, it can ship that Guest alongside several new ordinary companions so rarity weighting remains meaningful.
 
 The gallery and shop intentionally reveal different information:
 
-- The unified gallery displays cats and Guests together, offers a Guest filter, and shows locked items as silhouettes.
+- The unified gallery displays all companions together, supports collection grouping and optional dynamic species filters, and shows locked items as silhouettes.
 - The shop displays full artwork, name, rarity, and personality for directly purchasable items so a player can deliberately save for a favorite.
 - Owned Guests receive a visible Guest badge but otherwise behave like every other equipped or displayed collectible.
 
@@ -785,7 +795,7 @@ Key requirements:
 - Theme and background colors.
 - Offline precaching for the app shell, code, fonts, and collectible assets.
 - A clear “update available” flow so an active session is never reloaded unexpectedly.
-- An update prompt can say “New cats and surprises may be waiting” when the bundled catalog version changes; activation waits until the current round and reward reveal are complete.
+- An update prompt can say “New companions and surprises may be waiting” when the bundled catalog version changes; activation waits until the current round and reward reveal are complete.
 - GitHub Pages repository base path configured correctly.
 - No reliance on server-side routes.
 - A small install-help screen for iPhone/iPad and Android.
@@ -811,7 +821,7 @@ WCAG 2.2's minimum target guidance is 24×24 CSS pixels or sufficient spacing, w
 
 - Keep the first JavaScript bundle small; lazy-load gallery/progress views if they become large.
 - Use optimized WebP/AVIF images with explicit dimensions.
-- Preload only the active cat and immediate UI assets.
+- Preload only the active companion and immediate UI assets.
 - Avoid heavy animation libraries initially.
 - Use CSS transforms and opacity for small celebrations.
 - Generate each next problem before the transition completes.
@@ -940,11 +950,11 @@ This ordering deliberately proves that the core math loop feels good before inve
 - Standard multiplication through 12, with larger Advanced ranges.
 - Previous-answer correction ribbon in rapid modes.
 - Growth/mastery as the headline result; accuracy and pace remain visible.
-- Cat-centered generic collectibles, Paw Coins, rarity tiers, Guests, a full gallery, one equipped companion, a three-item shelf, and duplicate-free initial draws.
+- Cat-centered but species-flexible companions, Paw Coins, rarity tiers, Special Guests, a full gallery, one equipped companion, per-companion themes, and duplicate-free initial draws.
 - Forgiving weekly practice goal plus a small first-session-of-the-day bonus.
 - Device speech synthesis as optional progressive enhancement.
 - Versioned JSON export/import.
-- Repository content packs only; new builds add cats and Guests without changing game logic or existing saves.
+- Repository content packs only; new builds add companions of any species without changing game logic or existing saves.
 
 ## Decisions to validate in prototypes
 

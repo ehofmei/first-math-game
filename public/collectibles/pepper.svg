@@ -1,8 +1,44 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400">
-  <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#ffd9d0"/><stop offset="1" stop-color="#f78976"/></linearGradient></defs>
-  <rect width="400" height="400" rx="88" fill="url(#b)"/><circle cx="200" cy="213" r="112" fill="#4b415c"/>
-  <path d="m111 153 16-92 67 66m95 26-16-92-67 66" fill="#4b415c" stroke="#30283d" stroke-width="10" stroke-linejoin="round"/>
-  <ellipse cx="160" cy="210" rx="15" ry="19" fill="#ffe8a4"/><ellipse cx="240" cy="210" rx="15" ry="19" fill="#ffe8a4"/>
-  <path d="m187 244 13 12 13-12-13-8Z" fill="#f0929e"/><path d="M166 268q34 28 68 0" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/>
-  <path d="M92 302q108 54 216 0l-16 55q-92 35-184 0Z" fill="#f06f73"/>
+  <defs>
+    <linearGradient id="bg" x2="1" y2="1">
+      <stop stop-color="#ffe0d7" />
+      <stop offset="1" stop-color="#f78976" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="88" fill="url(#bg)" />
+  <path
+    d="m108 157 19-96 67 68m98 28-19-96-67 68"
+    fill="#4b415c"
+    stroke="#30283d"
+    stroke-width="10"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M200 105c69 0 114 46 114 109 0 67-44 113-114 113S86 281 86 214c0-63 45-109 114-109Z"
+    fill="#4b415c"
+  />
+  <path d="M175 135q25-20 50 0l-9 23q-16-10-32 0Z" fill="#6a5d7d" />
+  <ellipse cx="158" cy="209" rx="18" ry="22" fill="#ffe8a4" />
+  <ellipse cx="242" cy="209" rx="18" ry="22" fill="#ffe8a4" />
+  <ellipse cx="158" cy="214" rx="7" ry="13" fill="#30283d" />
+  <ellipse cx="242" cy="214" rx="7" ry="13" fill="#30283d" />
+  <ellipse cx="174" cy="247" rx="29" ry="20" fill="#6a5d7d" />
+  <ellipse cx="226" cy="247" rx="29" ry="20" fill="#6a5d7d" />
+  <path d="m187 241 13 12 13-12-13-8Z" fill="#f0929e" />
+  <path
+    d="M168 268q32 27 64 0M146 249l-37-6m38 20-35 8m141-22 37-6m-38 20 35 8"
+    fill="none"
+    stroke="#fff8f0"
+    stroke-width="8"
+    stroke-linecap="round"
+  />
+  <path
+    d="M91 300q109 44 218 0l-13 40q-96 38-192 0Z"
+    fill="#f06f73"
+    stroke="#d95561"
+    stroke-width="7"
+    stroke-linejoin="round"
+  />
+  <circle cx="292" cy="319" r="18" fill="#f06f73" stroke="#d95561" stroke-width="7" />
+  <path d="m303 326 65 28-50 18-27-34Z" fill="#ff8a82" stroke="#d95561" stroke-width="7" stroke-linejoin="round" />
 </svg>

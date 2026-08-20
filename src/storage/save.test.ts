@@ -10,6 +10,7 @@ import {
   dailyCoinsRemaining,
   DETAILED_SESSION_LIMIT,
   LocalStorageSaveRepository,
+  updateArtStyle,
   updateSettings,
 } from './save';
 
@@ -31,7 +32,8 @@ describe('save data', () => {
     const repository = new LocalStorageSaveRepository();
     const save = createInitialSave(' Ada ', 'cozy-cats:sunny');
     expect(save.player.name).toBe('Ada');
-    expect(save.schemaVersion).toBe(4);
+    expect(save.schemaVersion).toBe(5);
+    expect(save.artStyle).toBe('sticker');
     await repository.save(save);
     await expect(repository.load()).resolves.toEqual(save);
     expect(repository.parseImport(repository.export(save))).toEqual(save);
@@ -46,9 +48,10 @@ describe('save data', () => {
     void _dailyCoins;
     const migrated = repository.parseImport(JSON.stringify({ ...legacy, schemaVersion: 1 }));
     expect(migrated).toMatchObject({
-      schemaVersion: 4,
+      schemaVersion: 5,
       player: { name: 'Ada' },
       coins: 0,
+      artStyle: 'sticker',
       dailyCoins: { date: '', earned: 0 },
     });
   });
@@ -113,7 +116,7 @@ describe('save data', () => {
     };
 
     const migrated = repository.parseImport(JSON.stringify(legacyV2));
-    expect(migrated.schemaVersion).toBe(4);
+    expect(migrated.schemaVersion).toBe(5);
     expect(migrated.sessions[0]).toMatchObject({
       rulesetVersion: 1,
       coinsPotential: 15,
@@ -260,9 +263,30 @@ describe('save data', () => {
       JSON.stringify({ ...withoutArchive, schemaVersion: 3, sessions }),
     );
 
-    expect(migrated.schemaVersion).toBe(4);
+    expect(migrated.schemaVersion).toBe(5);
+    expect(migrated.artStyle).toBe('sticker');
     expect(migrated.sessions).toHaveLength(DETAILED_SESSION_LIMIT);
     expect(migrated.archivedProgress.overall).toMatchObject({ rounds: 5, questions: 50 });
+  });
+
+  it('migrates a version 4 save with the new default art style', () => {
+    const repository = new LocalStorageSaveRepository();
+    const current = createInitialSave('Ada', 'cozy-cats:sunny');
+    const { artStyle: _artStyle, ...legacy } = current;
+    void _artStyle;
+
+    const migrated = repository.parseImport(JSON.stringify({ ...legacy, schemaVersion: 4 }));
+
+    expect(migrated).toMatchObject({ schemaVersion: 5, artStyle: 'sticker' });
+  });
+
+  it('updates the master art style without changing collection progress', () => {
+    const initial = createInitialSave('Ada', 'cozy-cats:sunny');
+    const classic = updateArtStyle(initial, 'classic');
+
+    expect(classic.artStyle).toBe('classic');
+    expect(classic.ownedCollectibleIds).toEqual(initial.ownedCollectibleIds);
+    expect(classic.equippedCollectibleId).toBe(initial.equippedCollectibleId);
   });
 
   it('clears play statistics without removing currency, companions, or settings', () => {
@@ -298,6 +322,7 @@ describe('save data', () => {
       coins: withHistory.coins,
       ownedCollectibleIds: initial.ownedCollectibleIds,
       settings: initial.settings,
+      artStyle: initial.artStyle,
     });
   });
 });

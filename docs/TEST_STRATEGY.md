@@ -9,6 +9,7 @@ Related references:
 - [Research and product design](../DESIGN_RESEARCH.md)
 - [Implementation plan](./IMPLEMENTATION_PLAN.md)
 - [Problem generation and session composition](./PROBLEM_GENERATION.md)
+- [Companion personality, dialogue, and motion](./COMPANION_PERSONALITY.md)
 
 ## Quality goals
 
@@ -113,7 +114,7 @@ Initial state-gallery coverage:
 - Timer at short, normal, and long durations.
 - Results: first session, personal best, accuracy improvement, pace improvement, no improvement.
 - Collectible cards for every rarity.
-- Cat and Guest badges.
+- Species/collection metadata and Special Guest badges.
 - Owned, equipped, and locked silhouettes.
 - Empty, partial, and complete gallery.
 - Capsule closed, opening, Common reveal, Special reveal, collection complete.
@@ -132,6 +133,14 @@ The gallery serves three purposes:
 It is excluded from normal production navigation and contains no privileged production behavior.
 
 The separate development Sound Lab at `/?dev=sounds` exposes every synthesized cue, its duration and building blocks, shared mute and volume controls, an aligned pitch/length/intensity/attack/noise/pan and waveform playground, repeat and contextual sequence tests, copyable recipes, and alternatives not yet wired into the game. It provides reproducible listening targets without requiring a player to repeatedly manufacture a particular game or reward state.
+
+The development Art Lab at `/?dev=art` compares collectible treatments at actual compact, phone, home, and reveal sizes, then applies one selected treatment to collection-card, home, capsule-reveal, and locked-silhouette contexts. It provides a stable visual bake-off without changing the production catalog or save data.
+
+The development Theme Lab at `/?dev=themes` renders every companion palette against representative buttons, focus indicators, panels, correct/incorrect feedback, and text. It exposes contrast results without changing equipped state or save data. Dual-art comparison remains in the Art Lab and the playable gallery so palette inspection stays focused.
+
+The development Companion Lab at `/?dev=companions` renders deterministic phrase selection, recent-line avoidance, context and result conditions, speech-bubble layouts, reusable motion profiles, motifs, phone/tablet/wide widths, reduced-motion and large-text stress states, copyable request/output JSON, and high-volume Draw 50 diagnostics. It uses repository fixtures and isolated component state rather than the player's save.
+
+The player-facing companion dialogue integration is covered at two levels: real-browser component tests verify quiet Home dialogue, polite Results announcements, and portrait alternatives; the Chromium journey verifies Home, Setup, and Results placement, first-round condition truthfulness, and phrase stability across unrelated audio and settings rerenders.
 
 ## Test layers
 
@@ -231,7 +240,7 @@ Initial critical journeys:
 1. First launch → name → starter → home.
 2. Configure → complete correct/incorrect questions → results.
 3. Replay with remembered settings.
-4. Earn coins → open capsule → gallery → equip.
+4. Earn coins → open capsule → gallery → equip → verify companion theme and placements.
 5. Reload and restore.
 6. Export → reset → import → restore.
 7. Keyboard-only completion.
@@ -242,6 +251,7 @@ Initial critical journeys:
 12. History → review a retained round → clear play history without clearing rewards or settings.
 13. Download complete backup → preview import → confirm replacement → reload restored progress.
 14. Restore a complete backup before onboarding on a new device.
+15. Use the equipped-companion home shortcut, verify collection progress and filters, switch portrait style, and return home without changing ownership.
 
 Playwright projects should include at minimum:
 
@@ -268,11 +278,13 @@ Good snapshot targets:
 - Round review with correct and incorrect answers.
 - Capsule reveal.
 - Gallery partial/complete.
+- Home and gallery at phone and tablet viewports, including companion portraits and completion indicators.
 - Shop.
 - Progress overview.
 - Backup and restore, including invalid-file and ready-to-restore states.
 - Offline/update prompts.
 - State-gallery rarity and component matrices.
+- Theme Lab palette and contrast matrix.
 
 Stability rules:
 
@@ -320,7 +332,7 @@ Automated scenarios:
 
 - Manifest and icons resolve under the GitHub Pages base path.
 - Service worker registers.
-- App shell and collectible assets become cached.
+- App shell and the three starter Sticker portraits are precached; the remaining Sticker collection is cached on demand.
 - Reload works with network disabled.
 - A complete game works offline.
 - Save writes continue offline.

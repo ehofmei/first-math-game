@@ -536,7 +536,10 @@ export function SoundLab() {
         </ul>
         <p>
           Open the playable app at <a href={import.meta.env.BASE_URL}>Number Nook</a>. Return here
-          with <code>?dev=sounds</code> while running the development server.
+          with <code>?dev=sounds</code> while running the development server, compare collectible
+          studies in the <a href="?dev=art">Art Lab</a>, or inspect palettes in the{' '}
+          <a href="?dev=themes">Theme Lab</a>. Dialogue and motion experiments live in the{' '}
+          <a href="?dev=companions">Companion Lab</a>.
         </p>
       </section>
     </main>

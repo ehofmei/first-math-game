@@ -290,7 +290,11 @@ export function buildPlayHistoryExport(save: SaveData, generatedAt: string): Pla
         type: event.type,
         coinsSpent: event.coinsSpent,
         collectibleId: event.collectibleId,
-        collectibleKind: collectible?.kind ?? null,
+        collectibleKind: collectible
+          ? collectible.specialGuest
+            ? 'guest'
+            : collectible.species
+          : null,
         rarity: collectible?.rarity ?? null,
       };
     }),

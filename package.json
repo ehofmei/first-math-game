@@ -19,6 +19,7 @@
     "test:visual": "playwright test --grep @visual",
     "test:pwa": "playwright test --grep @pwa",
     "test:coverage": "vitest run --config vitest.config.ts --coverage",
+    "art:optimize": "node --experimental-strip-types scripts/optimize-sticker-assets.ts",
     "content:check": "node --experimental-strip-types scripts/validate-content.ts",
     "verify": "npm run format:check && npm run lint && npm run typecheck && npm run content:check && npm run test:coverage && npm run test:browser && npm run build && playwright test --project=chromium"
   },

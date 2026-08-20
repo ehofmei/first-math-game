@@ -22,7 +22,7 @@ Review is intentionally reflective rather than punitive. It does not change the 
 
 ## Bounded detailed history
 
-Save schema version 4 retains the newest 30 completed rounds with full question-level detail. Completing round 31 archives the oldest detailed round into additive lifetime totals and keeps rounds 2–31 in detail.
+Save schema version 4 introduced the newest-30 detailed window, and current schema version 5 preserves it unchanged. Completing round 31 archives the oldest detailed round into additive lifetime totals and keeps rounds 2–31 in detail.
 
 Archived totals preserve:
 
@@ -55,7 +55,7 @@ The analysis export excludes the player name, account identifiers, installation 
 
 ## Migration and clearing
 
-Version 1, 2, and 3 saves migrate automatically to schema version 4. If an older save has more than 30 sessions, the oldest sessions are summarized during migration and the newest 30 retain their question details.
+Version 1–4 saves migrate automatically to current schema version 5. If an older save has more than 30 sessions, the oldest sessions are summarized during migration and the newest 30 retain their question details. Version 5 adds only the art-style preference and does not change history retention.
 
 **Clear play history** uses a confirmation step and removes:
 

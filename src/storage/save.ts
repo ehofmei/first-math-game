@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { artStyleSchema, type ArtStyle } from '../content/schema';
 import { DEFAULT_SETTINGS, DIFFICULTY_IDS, OPERATION_IDS, type GameSettings } from '../domain/math';
 import { archiveSessions, createEmptyArchivedProgress } from '../domain/progress';
 import { DAILY_COIN_CAP } from '../domain/rewards';
@@ -135,7 +136,7 @@ const legacySaveV3Schema = z.object({
   economyEvents: z.array(economyEventSchema).max(500),
 });
 
-export const saveSchema = z.object({
+const legacySaveV4Schema = z.object({
   schemaVersion: z.literal(4),
   ...commonSaveFields(sessionSchema, DETAILED_SESSION_LIMIT),
   dailyCoins: z.object({
@@ -146,7 +147,20 @@ export const saveSchema = z.object({
   archivedProgress: archivedProgressSchema,
 });
 
+export const saveSchema = z.object({
+  schemaVersion: z.literal(5),
+  ...commonSaveFields(sessionSchema, DETAILED_SESSION_LIMIT),
+  artStyle: artStyleSchema,
+  dailyCoins: z.object({
+    date: z.string(),
+    earned: z.number().int().min(0).max(DAILY_COIN_CAP),
+  }),
+  economyEvents: z.array(economyEventSchema).max(500),
+  archivedProgress: archivedProgressSchema,
+});
+
 export type SaveData = z.infer<typeof saveSchema>;
+export const DEFAULT_ART_STYLE: ArtStyle = 'sticker';
 
 function enrichLegacyAnswer(answer: z.infer<typeof legacyAnswerSchema>): AnswerRecord {
   const structured = answer.problemId.match(
@@ -178,9 +192,10 @@ function enrichLegacySession(session: z.infer<typeof legacySessionSchema>): Sess
 
 export function createInitialSave(name: string, starterId: string): SaveData {
   return {
-    schemaVersion: 4,
+    schemaVersion: 5,
     player: { name: name.trim() },
     settings: DEFAULT_SETTINGS,
+    artStyle: DEFAULT_ART_STYLE,
     coins: 0,
     dailyCoins: { date: '', earned: 0 },
     economyEvents: [],
@@ -231,6 +246,10 @@ export function updateSettings(save: SaveData, settings: GameSettings): SaveData
   return { ...save, settings };
 }
 
+export function updateArtStyle(save: SaveData, artStyle: ArtStyle): SaveData {
+  return { ...save, artStyle };
+}
+
 export interface SaveRepository {
   load(): Promise<SaveData | null>;
   save(data: SaveData): Promise<void>;
@@ -269,11 +288,21 @@ export class LocalStorageSaveRepository implements SaveRepository {
       };
     };
 
+    const legacyV4 = legacySaveV4Schema.safeParse(input);
+    if (legacyV4.success) {
+      return {
+        ...legacyV4.data,
+        schemaVersion: 5,
+        artStyle: DEFAULT_ART_STYLE,
+      };
+    }
+
     const legacyV3 = legacySaveV3Schema.safeParse(input);
     if (legacyV3.success) {
       return saveSchema.parse({
         ...legacyV3.data,
-        schemaVersion: 4,
+        schemaVersion: 5,
+        artStyle: DEFAULT_ART_STYLE,
         ...retain(legacyV3.data.sessions),
       });
     }
@@ -282,7 +311,8 @@ export class LocalStorageSaveRepository implements SaveRepository {
     if (legacyV2.success) {
       return {
         ...legacyV2.data,
-        schemaVersion: 4,
+        schemaVersion: 5,
+        artStyle: DEFAULT_ART_STYLE,
         economyEvents: [],
         ...retain(legacyV2.data.sessions.map(enrichLegacySession)),
       };
@@ -291,7 +321,8 @@ export class LocalStorageSaveRepository implements SaveRepository {
     const legacyV1 = legacySaveV1Schema.parse(input);
     return {
       ...legacyV1,
-      schemaVersion: 4,
+      schemaVersion: 5,
+      artStyle: DEFAULT_ART_STYLE,
       dailyCoins: { date: '', earned: 0 },
       economyEvents: [],
       ...retain(legacyV1.sessions.map(enrichLegacySession)),

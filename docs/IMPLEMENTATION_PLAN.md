@@ -269,7 +269,8 @@ Folders should be introduced only when needed; this is a target shape, not a req
 
 ### Deliverables
 
-- Onboarding and starter choice.
+- One-screen onboarding with a deliberate, unselected-by-default starter choice, themed selection confirmation, local-save explanation, and pre-save restore path.
+- A distinct brand-new Home invitation that explains the first round and immediate Paw Coin loop without adding a tutorial maze.
 - Remembered setup.
 - Question screen.
 - Large answer cards.
@@ -289,6 +290,8 @@ Folders should be introduced only when needed; this is a target shape, not a req
 - The timer excludes paused time when pause is introduced.
 - Correctness is never conveyed through color alone.
 - The flow works at target phone and tablet viewports without horizontal scrolling.
+- All three starters are visible together at the target phone width, and entering the Nook requires an explicit starter selection.
+- First-run language does not imply that a returning-player history already exists.
 - Critical states pass automated accessibility scans and manual keyboard review.
 
 ## Milestone 3: Persistence and reward loop
@@ -354,7 +357,7 @@ Add one independently verified slice at a time:
 10. Direct-purchase shop and tuned rarity economy.
 11. Improvement Duel after at least five comparable sessions.
 12. Final collectible art and expanded repository packs.
-13. Companion personality dialogue, reusable CSS motion/motif profiles, and a development Companion Lab. The contract, engine, lab, and first player-facing Home/Setup/Results integration are complete; Capsule, equip confirmation, and progress dialogue are the next optional expansion.
+13. ~~Companion personality dialogue, reusable CSS motion/motif profiles, and a development Companion Lab.~~ Completed across Home, Setup, Results, idle Capsule, equip confirmation, and Play History, with stable event-based selection and browser/visual coverage.
 14. Optional speech and sound. The synthesized contextual-effects pass and development Sound Lab are complete; subjective cue refinement, music, and spoken problems remain future work.
 
 Each operation must ship with its generator invariants, distractor rules, difficulty tests, UI behavior, progress aggregation, and end-to-end coverage. “Adding the operation” is not complete when only the equation generator exists.

@@ -14,6 +14,16 @@ describe('companion content validation', () => {
     expect(DIALOGUE_PHRASES).toHaveLength(128);
   });
 
+  it('lets the labeled companion speak directly instead of narrating itself', () => {
+    const collectibleNames = catalog.collectibles.map(({ name }) => name);
+    const narratorStyleLines = DIALOGUE_PHRASES.filter(
+      ({ text }) =>
+        text.includes('{companion}') || collectibleNames.some((name) => text.includes(name)),
+    );
+
+    expect(narratorStyleLines).toEqual([]);
+  });
+
   it('reports invalid and incomplete personality metadata', () => {
     const personalities = [
       {

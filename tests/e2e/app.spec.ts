@@ -4,8 +4,8 @@ import type { Page } from '@playwright/test';
 
 async function onboard(page: Page) {
   await page.getByLabel('What should we call you?').fill('Ada');
-  await page.getByRole('button', { name: 'Moonbeam' }).click();
-  await page.getByRole('button', { name: 'Enter Number Nook' }).click();
+  await page.getByRole('button', { name: 'Moonbeam', exact: true }).click();
+  await page.getByRole('button', { name: 'Start with Moonbeam' }).click();
   await expect(page.getByRole('heading', { name: "Ada's Number Nook" })).toBeVisible();
 }
 
@@ -29,9 +29,43 @@ function solveEquation(text: string): number {
 }
 
 test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    let nextSeed = 20_260_820;
+    const browserGetRandomValues = crypto.getRandomValues.bind(crypto);
+    Object.defineProperty(crypto, 'getRandomValues', {
+      configurable: true,
+      value: <T extends Exclude<BufferSource, ArrayBuffer>>(values: T): T => {
+        if (values instanceof Uint32Array && values.length === 1) {
+          values[0] = nextSeed;
+          nextSeed += 1;
+          return values;
+        }
+        return browserGetRandomValues(values);
+      },
+    });
+  });
   await page.goto('./');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
+});
+
+test('a first companion must be chosen deliberately before entering the Nook', async ({ page }) => {
+  const sunny = page.getByRole('button', { name: 'Sunny', exact: true });
+  const moonbeam = page.getByRole('button', { name: 'Moonbeam', exact: true });
+  const pepper = page.getByRole('button', { name: 'Pepper', exact: true });
+  const continueButton = page.getByRole('button', { name: 'Choose a companion to continue' });
+
+  await expect(sunny).toHaveAttribute('aria-pressed', 'false');
+  await expect(moonbeam).toHaveAttribute('aria-pressed', 'false');
+  await expect(pepper).toHaveAttribute('aria-pressed', 'false');
+  await expect(continueButton).toBeDisabled();
+
+  await page.getByLabel('What should we call you?').fill('Ada');
+  await expect(continueButton).toBeDisabled();
+  await moonbeam.click();
+  await expect(moonbeam).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByText('Moonbeam is ready to join you!')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start with Moonbeam' })).toBeEnabled();
 });
 
 test('first launch, game, capsule, gallery, equip, and reload', async ({ page }) => {
@@ -73,15 +107,36 @@ test('first launch, game, capsule, gallery, equip, and reload', async ({ page })
     'data-dialogue-id',
     /results-first-round-/,
   );
-  await expect(page.locator('.coin-tally')).not.toHaveText('+0');
+  const coinTally = page.locator('.coin-tally');
+  const awardedCoins = await page.evaluate<number>(() => {
+    const save = JSON.parse(localStorage.getItem('first-math-game:save') ?? '{}') as {
+      sessions: { coinsEarned: number }[];
+    };
+    return save.sessions.at(-1)?.coinsEarned ?? 0;
+  });
+  const awardedCoinText = `+${awardedCoins}`;
+  await expect(coinTally).toHaveText(awardedCoinText);
   await page.getByRole('button', { name: 'Review questions' }).click();
   await expect(page.getByRole('heading', { name: 'Review your questions' })).toBeVisible();
   await expect(page.locator('.review-card')).toHaveCount(10);
   await page.getByRole('button', { name: 'Back', exact: true }).last().click();
   await expect(page.getByRole('button', { name: 'Review questions' })).toBeVisible();
+  await expect(coinTally).toHaveText(awardedCoinText);
+  await page.waitForTimeout(800);
+  await expect(coinTally).toHaveText(awardedCoinText);
+  await page.getByRole('button', { name: 'Open a capsule' }).click();
+  await expect(page.locator('.player-companion-dialogue--capsule')).toHaveAttribute(
+    'data-dialogue-context',
+    'capsule',
+  );
+  await page.getByRole('button', { name: 'Back', exact: true }).click();
+  await expect(coinTally).toHaveText(awardedCoinText);
+  await page.waitForTimeout(800);
+  await expect(coinTally).toHaveText(awardedCoinText);
   await page.getByRole('button', { name: 'Open a capsule' }).click();
   await page.getByRole('button', { name: 'Open capsule' }).click();
   await expect(page.getByRole('heading', { name: 'Opening your capsule…' })).toBeVisible();
+  await expect(page.locator('.player-companion-dialogue--capsule')).toBeHidden();
   await expect(page.getByRole('heading', { name: /You found/ })).toBeVisible();
   const foundName = ((await page.getByRole('heading', { name: /You found/ }).textContent()) ?? '')
     .replace('You found ', '')
@@ -91,6 +146,10 @@ test('first launch, game, capsule, gallery, equip, and reload', async ({ page })
   await expect(page.getByRole('button', { name: 'The Nook Neighbors' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Special Guests' })).toBeVisible();
   await page.getByRole('button', { name: foundName }).click();
+  const equipDialogue = page.locator('.player-companion-dialogue--equip');
+  await expect(equipDialogue).toHaveAttribute('data-dialogue-context', 'equip');
+  await expect(equipDialogue).toContainText(foundName);
+  await expect(equipDialogue.locator('[aria-live="polite"]')).toBeVisible();
   const equippedId = await page.evaluate<string>(() => {
     const save = JSON.parse(localStorage.getItem('first-math-game:save') ?? '{}') as {
       equippedCollectibleId: string;
@@ -225,7 +284,7 @@ test('focus moves away from the selected answer when the next question appears',
   page,
 }) => {
   await onboard(page);
-  await page.getByRole('button', { name: 'Play now' }).click();
+  await page.getByRole('button', { name: 'Start first round' }).click();
 
   const equation = page.locator('#equation');
   const firstEquation = (await equation.textContent()) ?? '';
@@ -237,6 +296,35 @@ test('focus moves away from the selected answer when the next question appears',
   await expect(page.locator('.answer-card').nth(3)).not.toBeFocused();
 });
 
+test('a stationary pointer does not highlight the next answer after keyboard play', async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    ['phone', 'tablet'].includes(testInfo.project.name),
+    'Stationary fine-pointer hover is a desktop-only interaction.',
+  );
+  await onboard(page);
+  await page.getByRole('button', { name: 'Start first round' }).click();
+
+  const equation = page.locator('#equation');
+  const firstEquation = (await equation.textContent()) ?? '';
+  const fourthAnswer = page.locator('.answer-card').nth(3);
+
+  await fourthAnswer.hover();
+  await expect(page.locator('.answer-grid')).toHaveAttribute('data-hover-ready', 'true');
+  await expect(fourthAnswer).toHaveCSS('border-color', 'rgb(173, 155, 248)');
+
+  await page.keyboard.press('4');
+  await expect(equation).not.toHaveText(firstEquation);
+  await expect(page.locator('.answer-grid')).toHaveAttribute('data-hover-ready', 'false');
+  await expect(page.locator('.answer-card').nth(3)).toHaveCSS('border-color', 'rgb(232, 223, 214)');
+
+  await page.mouse.move(0, 0);
+  await page.locator('.answer-card').nth(3).hover();
+  await expect(page.locator('.answer-grid')).toHaveAttribute('data-hover-ready', 'true');
+  await expect(page.locator('.answer-card').nth(3)).toHaveCSS('border-color', 'rgb(173, 155, 248)');
+});
+
 test('history copies a name-free, versioned analysis export', async ({
   page,
   context,
@@ -245,7 +333,7 @@ test('history copies a name-free, versioned analysis export', async ({
   test.skip(browserName !== 'chromium', 'Clipboard export is covered once in Chromium.');
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   await onboard(page);
-  await page.getByRole('button', { name: 'Play now' }).click();
+  await page.getByRole('button', { name: 'Start first round' }).click();
 
   for (let index = 0; index < 10; index += 1) {
     const equation = page.locator('#equation');
@@ -257,7 +345,11 @@ test('history copies a name-free, versioned analysis export', async ({
   await page.getByRole('button', { name: 'Back home' }).click();
   await page.getByRole('button', { name: 'Your progress' }).click();
   await expect(page.getByRole('heading', { name: 'Play History' })).toBeVisible();
-  await expect(page.getByText('Ruleset 6').first()).toBeVisible();
+  await expect(page.locator('.player-companion-dialogue--progress')).toHaveAttribute(
+    'data-dialogue-context',
+    'progress',
+  );
+  await expect(page.getByText('Ruleset 7').first()).toBeVisible();
   await page.evaluate('window.scrollTo(0, document.body.scrollHeight)');
   await expect.poll(() => page.evaluate<number>('window.scrollY')).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Review round' }).click();
@@ -469,6 +561,13 @@ test('@visual onboarding phone layout', async ({ page }, testInfo) => {
   await expect(page).toHaveScreenshot('onboarding.png', { fullPage: true });
 });
 
+test('@visual onboarding selected starter phone layout', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'phone', 'This baseline targets the phone viewport.');
+  await page.getByLabel('What should we call you?').fill('Ada');
+  await page.getByRole('button', { name: 'Moonbeam', exact: true }).click();
+  await expect(page).toHaveScreenshot('onboarding-ready.png', { fullPage: true });
+});
+
 test('@visual setup phone layout', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== 'phone', 'This baseline targets the phone viewport.');
   await onboard(page);
@@ -490,6 +589,35 @@ test('@visual empty history phone layout', async ({ page }, testInfo) => {
   await onboard(page);
   await page.getByRole('button', { name: 'Your progress' }).click();
   await expect(page).toHaveScreenshot('history-empty.png', { fullPage: true });
+});
+
+test('@visual capsule companion phone layout', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'phone', 'This baseline targets the phone viewport.');
+  await onboard(page);
+  await page.getByRole('button', { name: 'Companion Capsule' }).click();
+  await expect(page).toHaveScreenshot('capsule-companion.png', {
+    fullPage: true,
+    maxDiffPixels: 150,
+  });
+});
+
+test('@visual equip confirmation phone layout', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'phone', 'This baseline targets the phone viewport.');
+  await onboard(page);
+  await page.evaluate(() => {
+    const key = 'first-math-game:save';
+    const save = JSON.parse(localStorage.getItem(key) ?? '{}') as {
+      ownedCollectibleIds: string[];
+    };
+    save.ownedCollectibleIds.push('cozy-cats:sunny');
+    localStorage.setItem(key, JSON.stringify(save));
+  });
+  await page.reload();
+  await page.getByRole('button', { name: /^Collection/ }).click();
+  await page.getByRole('button', { name: 'Sunny' }).click();
+  await expect(page.locator('.collection-spotlight')).toHaveScreenshot('equip-confirmation.png', {
+    maxDiffPixels: 150,
+  });
 });
 
 test('@visual backup phone layout', async ({ page }, testInfo) => {

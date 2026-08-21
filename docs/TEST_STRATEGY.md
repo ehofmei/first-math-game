@@ -140,7 +140,9 @@ The development Theme Lab at `/?dev=themes` renders every companion palette agai
 
 The development Companion Lab at `/?dev=companions` renders deterministic phrase selection, recent-line avoidance, context and result conditions, speech-bubble layouts, reusable motion profiles, motifs, phone/tablet/wide widths, reduced-motion and large-text stress states, copyable request/output JSON, and high-volume Draw 50 diagnostics. It uses repository fixtures and isolated component state rather than the player's save.
 
-The player-facing companion dialogue integration is covered at two levels: real-browser component tests verify quiet Home dialogue, polite Results announcements, and portrait alternatives; the Chromium journey verifies Home, Setup, and Results placement, first-round condition truthfulness, and phrase stability across unrelated audio and settings rerenders.
+The player-facing companion dialogue integration is covered at three levels: content validation preserves permanent IDs, length limits, conditions, and the current first-person speaker convention; real-browser component tests verify computed contrast, quiet navigation dialogue, polite Results/Equip announcements, portrait alternatives, and wrapping; the Chromium journey verifies all six contexts, idle-only Capsule placement, first-round condition truthfulness, equip transitions, and phrase stability across unrelated audio and settings rerenders. Deterministic phone snapshots cover the Progress coach, Capsule prompt, and equip-confirmation spotlight. Browser tests replace the application's one-value random seeds with a predictable sequence so visual baselines and journey failures are reproducible without changing production randomness.
+
+First-run coverage separately verifies that no starter is silently preselected, all three choices expose pressed state, the continue action remains disabled until both a name and starter exist, the selected companion confirmation appears, and the saved starter controls the initial theme. Phone snapshots preserve both the empty and ready-to-enter onboarding states, while phone and tablet Home snapshots preserve the distinct first-round invitation.
 
 ## Test layers
 
@@ -243,7 +245,7 @@ Initial critical journeys:
 4. Earn coins → open capsule → gallery → equip → verify companion theme and placements.
 5. Reload and restore.
 6. Export → reset → import → restore.
-7. Keyboard-only completion.
+7. Keyboard-only completion, including focus transfer and stationary-pointer hover suppression between questions.
 8. Offline reload and play after initial caching.
 9. Update available during a round → defer → update safely afterward.
 10. Load an older save against a catalog containing new items.

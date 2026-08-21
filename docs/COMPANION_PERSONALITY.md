@@ -4,7 +4,9 @@ This document defines how Number Nook companions can feel expressive and memorab
 
 The system should be bold enough to make collecting feel worthwhile, but simple enough to scale from eleven companions to one hundred or more.
 
-Implementation status: the pure engine boundary, development-only Companion Lab, and first player-facing dialogue slice are complete. The repository now contains 128 validated phrases, all eleven personality definitions, deterministic condition-aware selection, per-context eight-line recent queues, token rendering, unit/property coverage, responsive presentation previews, CSS motion/motif profiles, and Draw 50 diagnostics. Stable companion dialogue now appears on Home, Game Setup, and Round Results; Capsule, equip confirmation, and Play History remain future integrations.
+Implementation status: the pure engine boundary, development-only Companion Lab, and all six initial player-facing dialogue contexts are complete. The repository now contains 128 validated phrases, all eleven personality definitions, deterministic condition-aware selection, per-context eight-line recent queues, token rendering, unit/property coverage, responsive presentation previews, CSS motion/motif profiles, and Draw 50 diagnostics. Stable companion dialogue appears on Home, Game Setup, Round Results, the idle Capsule screen, equip confirmation, and Play History.
+
+The initial copy-polish pass established the companion as the direct first-person speaker, replaced formal educational phrasing with warmer conversational language, and added restrained cute imagery without changing phrase IDs, eligibility, or result conditions.
 
 ## Goals
 
@@ -42,10 +44,18 @@ Avoid messages such as:
 
 Prefer messages such as:
 
-- “Pepper noticed how boldly you kept going.”
-- “Every question you tried strengthened your skills.”
+- “I’m cheering for all the practice you put in.”
+- “Every question gave your number skills a little more muscle.”
 - “That round felt smoother than the last one.”
-- “Moonbeam is proud of the practice you put in.”
+- “A new best calls for a tiny celebration!”
+
+### Cute and conversational, not babyish
+
+The visible name below each bubble identifies the speaker. Production dialogue therefore uses first person—“I saved you a cozy spot”—instead of making a companion narrate itself with lines such as “Cloud thinks…” or “Sunny says…”. Contractions and direct language should make each line sound spoken rather than written by an instructional system.
+
+Cuteness should come from one small concrete image, gentle surprise, or character motif: a pocketful of colors, a cozy corner, a whirring number machine, or a tiny celebration. Do not stack several flourishes in one line. Avoid baby talk, forced animal puns, trendy slang, excessive exclamation marks, or language aimed at a specific age.
+
+Prefer “More answers clicked into place this time!” over “You turned practice into greater accuracy.” Keep exact educational terms when they communicate a real fact—such as “100% accuracy”—but surround them with natural language.
 
 ### Accuracy claims must be true
 
@@ -158,7 +168,7 @@ Rules:
 
 Version one supports a deliberately small token whitelist:
 
-- `{companion}` — current companion name;
+- `{companion}` — current companion name; supported by the renderer, but normally unnecessary in first-person speech because the bubble already labels its speaker;
 - `{operation}` — one operation label when exactly one was practiced;
 - `{accuracy}` — rounded accuracy percentage, only in contexts where it is supplied.
 
@@ -453,20 +463,22 @@ Across generated valid requests and seeds:
 2. ~~Build the in-memory recent queue and deterministic selection service without changing save schema 5.~~ Completed as a pure queue helper; the eventual UI will own one queue per context.
 3. ~~Add `/?dev=companions` with phrase generation, scenario controls, motion previews, and Draw 50 diagnostics.~~ Completed without reading or mutating the player's save.
 4. ~~Add a reusable `CompanionDialogue` presentation to home, setup, and results first.~~ Completed with stable per-entry selection, truthful result facts, responsive layouts, polite Results announcements, and reduced-motion support.
-5. Add dialogue to capsule, equip confirmation, and progress after the first three contexts are play-tested.
-6. Add reusable motion profiles and a small motif set, beginning with Moonbeam, Pepper, Sunny, and Button Bunny as visual stress cases.
+5. ~~Add dialogue to capsule, equip confirmation, and progress after the first three contexts are play-tested.~~ Completed with an idle-only Capsule prompt, a polite one-event equip introduction, and a compact Play History coach card.
+6. ~~Add reusable motion profiles and a small motif set, beginning with Moonbeam, Pepper, Sunny, and Button Bunny as visual stress cases.~~ Completed for every current companion, with reduced-motion coverage.
 7. ~~Write three to five signature lines for every live companion and validate the complete bank.~~ Completed with three initial signature lines per companion; phrasing remains open to play-test refinement.
 8. Observe real play before adding persistent phrase history, alternate expression art, favorites, companion-led goals, or spoken dialogue.
 
-## First implementation slice
+## Implemented system
 
-This completed build stops at the pure engine boundary:
+The completed initial system includes:
 
 - types and validated data;
 - all eleven personality definitions;
 - initial global/voice/signature phrase content;
 - deterministic filtering, repetition avoidance, selection, and token rendering;
 - unit and property tests;
-- no React wiring, CSS motion, save migration, or visible player-facing change yet.
+- reusable React presentation across all six contexts;
+- CSS motion and decorative motif profiles with reduced-motion handling;
+- real-browser component coverage, critical-journey assertions, and deterministic phone snapshots.
 
-This makes the personality system independently reviewable before dialogue begins appearing throughout the application.
+Dialogue history intentionally remains session-only, so this feature does not require a save migration.

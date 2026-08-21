@@ -9,6 +9,7 @@ import {
   type ComposedFact,
   type ComposedOperation,
 } from './composition';
+import { allocateSessionLowChallengeCounts } from './sessionComposition';
 
 export const OPERATION_IDS = ['addition', 'subtraction', 'multiplication', 'division'] as const;
 export type OperationId = (typeof OPERATION_IDS)[number];
@@ -424,6 +425,11 @@ export function generateSession(settings: GameSettings, random: RandomSource): P
       (_, index) => operations[index % operations.length]!,
     ),
   );
+  const lowChallengeCounts = allocateSessionLowChallengeCounts(
+    operationSchedule,
+    settings.difficulty,
+    random,
+  );
   const composedAdditiveOperations = operationSchedule.filter(
     (operation): operation is ComposedAdditiveOperation =>
       operation === 'addition' || operation === 'subtraction',
@@ -432,6 +438,10 @@ export function generateSession(settings: GameSettings, random: RandomSource): P
     composedAdditiveOperations,
     settings.difficulty,
     DIFFICULTY_RULES[settings.difficulty],
+    {
+      addition: lowChallengeCounts.addition,
+      subtraction: lowChallengeCounts.subtraction,
+    },
     random,
   );
   const composedOperations = operationSchedule.filter(
@@ -442,6 +452,10 @@ export function generateSession(settings: GameSettings, random: RandomSource): P
     composedOperations,
     settings.difficulty,
     DIFFICULTY_RULES[settings.difficulty],
+    {
+      multiplication: lowChallengeCounts.multiplication,
+      division: lowChallengeCounts.division,
+    },
     random,
   );
   let composedAdditiveIndex = 0;

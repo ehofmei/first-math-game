@@ -8,7 +8,7 @@ Currently wired gameplay cues are:
 
 | Event | Cue | Intent |
 | --- | --- | --- |
-| Round launched | Bubble pop | Playful transition into the question loop |
+| Round launched | Bright chime | Clear confirmation that the question loop has begun |
 | Correct answer | Nook correct | Fast confirmation related to Round complete |
 | Incorrect answer | Gentle answer cue | Neutral information without a failure buzzer |
 | Round complete | Round complete | Brief four-note finish |
@@ -94,7 +94,7 @@ Automation can verify the sound graph and controls but cannot judge taste or the
 
 ## Recommended next audio steps
 
-1. Play one or two complete rounds to judge Bubble pop, Nook correct, Gentle answer cue, Round complete, and the Paw Coin count-up in context.
+1. Play one or two complete rounds to judge Bright chime, Nook correct, Gentle answer cue, Round complete, and the Paw Coin count-up in context.
 2. Open a capsule and confirm the sound's reveal chord aligns with the collectible appearing.
 3. Try selecting and equipping companions, plus pressing an unaffordable capsule once.
 4. Record only obvious problems that should block the next development phase; preserve subjective refinements in the deferred backlog.

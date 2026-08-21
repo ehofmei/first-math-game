@@ -1,7 +1,7 @@
 import type { DialoguePhrase } from './types.ts';
 
 const SHARED_HOME_PHRASES = [
-  { id: 'home-welcome-01', context: 'home', text: 'Ready when you are.' },
+  { id: 'home-welcome-01', context: 'home', text: 'I’m ready when you are.' },
   {
     id: 'home-welcome-02',
     context: 'home',
@@ -10,7 +10,7 @@ const SHARED_HOME_PHRASES = [
   {
     id: 'home-welcome-03',
     context: 'home',
-    text: '{companion} saved you a cozy spot.',
+    text: 'I saved you a cozy spot.',
   },
   {
     id: 'home-welcome-04',
@@ -20,29 +20,29 @@ const SHARED_HOME_PHRASES = [
   {
     id: 'home-welcome-05',
     context: 'home',
-    text: 'Your Number Nook is ready for another visit.',
+    text: 'The Nook perked right up when you arrived.',
   },
   {
     id: 'home-welcome-06',
     context: 'home',
-    text: 'Small steps still move your skills forward.',
+    text: 'Even tiny steps make your number skills grow.',
   },
   {
     id: 'home-warm-01',
     context: 'home',
-    text: 'It is always good to see you back in the Nook.',
+    text: 'You’re back! The Nook feels cozier already.',
     voices: ['warm'],
   },
   {
     id: 'home-playful-01',
     context: 'home',
-    text: 'There are fresh questions waiting to be discovered.',
+    text: 'Some fresh little number puzzles just popped up.',
     voices: ['playful'],
   },
   {
     id: 'home-dreamy-01',
     context: 'home',
-    text: 'A quiet little challenge is waiting for you.',
+    text: 'A quiet little number adventure is waiting for you.',
     voices: ['dreamy'],
   },
   {
@@ -60,7 +60,7 @@ const SHARED_HOME_PHRASES = [
   {
     id: 'home-inventive-01',
     context: 'home',
-    text: 'Let us see which number patterns click today.',
+    text: 'Let’s see which number patterns click into place today.',
     voices: ['inventive'],
   },
   {
@@ -72,35 +72,39 @@ const SHARED_HOME_PHRASES = [
   {
     id: 'home-welcome-07',
     context: 'home',
-    text: 'You choose the challenge, and {companion} will come along.',
+    text: 'You choose the challenge, and I’ll come along.',
   },
   {
     id: 'home-welcome-08',
     context: 'home',
-    text: 'A quick round is a great way to keep growing.',
+    text: 'A quick round gives your number skills a happy little stretch.',
   },
 ] as const satisfies readonly DialoguePhrase[];
 
 const SHARED_SETUP_PHRASES = [
   { id: 'setup-ready-01', context: 'setup', text: 'Pick a challenge that feels right today.' },
-  { id: 'setup-ready-02', context: 'setup', text: 'You can practice one skill or mix things up.' },
-  { id: 'setup-ready-03', context: 'setup', text: 'A careful round starts with a good plan.' },
-  { id: 'setup-ready-04', context: 'setup', text: '{companion} is ready for your next round.' },
+  {
+    id: 'setup-ready-02',
+    context: 'setup',
+    text: 'You can pick one skill or mix a few together.',
+  },
+  { id: 'setup-ready-03', context: 'setup', text: 'Let’s build a round that feels just right.' },
+  { id: 'setup-ready-04', context: 'setup', text: 'I’m all set for your next round.' },
   {
     id: 'setup-ready-05',
     context: 'setup',
-    text: 'Choose your challenge, then take it one question at a time.',
+    text: 'Pick your challenge, and we’ll take it one question at a time.',
   },
   {
     id: 'setup-warm-01',
     context: 'setup',
-    text: 'There is no rush. Choose what you would like to practice.',
+    text: 'No rush—pick whatever feels good to practice.',
     voices: ['warm'],
   },
   {
     id: 'setup-playful-01',
     context: 'setup',
-    text: 'Which set of questions should we open first?',
+    text: 'Which little stack of number puzzles should we open first?',
     voices: ['playful'],
   },
   {
@@ -112,13 +116,13 @@ const SHARED_SETUP_PHRASES = [
   {
     id: 'setup-thoughtful-01',
     context: 'setup',
-    text: '{operation} practice sounds like a thoughtful choice.',
+    text: '{operation} has some interesting patterns to spot.',
     voices: ['thoughtful'],
   },
   {
     id: 'setup-adventurous-01',
     context: 'setup',
-    text: 'Choose the trail. {companion} is ready to explore it.',
+    text: 'Choose the trail. I’m ready to explore it with you.',
     voices: ['adventurous'],
   },
   {
@@ -139,23 +143,27 @@ const SHARED_RESULT_PHRASES = [
   {
     id: 'results-practice-01',
     context: 'results',
-    text: 'Every question you tried strengthened your skills.',
+    text: 'Every question gave your number skills a little more muscle.',
   },
-  { id: 'results-practice-02', context: 'results', text: 'That practice belongs to you now.' },
+  {
+    id: 'results-practice-02',
+    context: 'results',
+    text: 'That whole round of practice is yours to keep.',
+  },
   {
     id: 'results-practice-03',
     context: 'results',
-    text: 'You gave your number skills a useful workout.',
+    text: 'You gave your number skills a good little workout.',
   },
   {
     id: 'results-practice-04',
     context: 'results',
-    text: '{companion} is cheering for the practice you put in.',
+    text: 'I’m cheering for all the practice you put in.',
   },
   {
     id: 'results-practice-05',
     context: 'results',
-    text: 'Another round complete and another step forward.',
+    text: 'Another round tucked away—nice work!',
   },
   {
     id: 'results-practice-06',
@@ -165,46 +173,46 @@ const SHARED_RESULT_PHRASES = [
   {
     id: 'results-practice-07',
     context: 'results',
-    text: 'Practice adds up, one thoughtful answer at a time.',
+    text: 'Practice adds up, one answer at a time.',
   },
   {
     id: 'results-practice-08',
     context: 'results',
-    text: 'You completed the round with {accuracy} accuracy.',
+    text: 'You wrapped up the round with {accuracy} accuracy.',
   },
   {
     id: 'results-warm-01',
     context: 'results',
-    text: 'That was time well spent practicing.',
+    text: 'That was a lovely little bit of practice.',
     voices: ['warm'],
   },
   {
     id: 'results-playful-01',
     context: 'results',
-    text: 'Those questions kept things interesting!',
+    text: 'Those questions kept us on our toes!',
     voices: ['playful'],
   },
   {
     id: 'results-thoughtful-01',
     context: 'results',
-    text: 'Notice what felt easier by the end of the round.',
+    text: 'Did anything feel a little easier by the end?',
     voices: ['thoughtful'],
   },
   {
     id: 'results-strong-accuracy-01',
     context: 'results',
-    text: 'Careful work made this a very accurate round.',
+    text: 'That round gave your number sense a good stretch.',
   },
   {
     id: 'results-first-round-01',
     context: 'results',
-    text: 'Your first round is complete. That is a wonderful place to begin.',
+    text: 'First round complete! The Nook is happy to have you here.',
     condition: { firstRound: true },
   },
   {
     id: 'results-first-round-02',
     context: 'results',
-    text: '{companion} loved joining you for your first round.',
+    text: 'I loved joining you for your very first round.',
     condition: { firstRound: true },
   },
   {
@@ -216,7 +224,7 @@ const SHARED_RESULT_PHRASES = [
   {
     id: 'results-first-round-04',
     context: 'results',
-    text: 'One round down, with plenty of room for new discoveries.',
+    text: 'One round down—and a whole Nook full of discoveries ahead.',
     condition: { firstRound: true },
   },
   {
@@ -228,13 +236,13 @@ const SHARED_RESULT_PHRASES = [
   {
     id: 'results-perfect-02',
     context: 'results',
-    text: '{companion} counted every answer, and every one was right!',
+    text: 'I counted every answer—and every one was right!',
     condition: { perfect: true },
   },
   {
     id: 'results-perfect-03',
     context: 'results',
-    text: 'Perfect accuracy made that round sparkle.',
+    text: 'Perfect accuracy! That round has a little extra sparkle.',
     condition: { perfect: true },
   },
   {
@@ -252,7 +260,7 @@ const SHARED_RESULT_PHRASES = [
   {
     id: 'results-perfect-06',
     context: 'results',
-    text: 'That was {accuracy} accuracy from start to finish.',
+    text: 'That’s {accuracy} accuracy from the first question to the last.',
     condition: { perfect: true },
   },
   {
@@ -264,55 +272,55 @@ const SHARED_RESULT_PHRASES = [
   {
     id: 'results-personal-best-02',
     context: 'results',
-    text: '{companion} just watched you set a brand-new best score.',
+    text: 'I saw that brand-new best score happen!',
     condition: { personalBest: true },
   },
   {
     id: 'results-personal-best-03',
     context: 'results',
-    text: 'Your practice just raised the bar.',
+    text: 'Look at that—you scooted your best score even higher!',
     condition: { personalBest: true },
   },
   {
     id: 'results-personal-best-04',
     context: 'results',
-    text: 'A new best is a fine reason to celebrate.',
+    text: 'A new best calls for a tiny celebration!',
     condition: { personalBest: true },
   },
   {
     id: 'results-personal-best-05',
     context: 'results',
-    text: 'That round became the score to beat next time.',
+    text: 'You just made a shiny new score to chase next time.',
     condition: { personalBest: true },
   },
   {
     id: 'results-personal-best-06',
     context: 'results',
-    text: 'You found a new level of your own.',
+    text: 'You just unlocked a new best of your very own.',
     condition: { personalBest: true },
   },
   {
     id: 'results-accuracy-improved-01',
     context: 'results',
-    text: 'Your careful work made this round more accurate.',
+    text: 'More answers clicked into place this time!',
     condition: { accuracyImproved: true },
   },
   {
     id: 'results-accuracy-improved-02',
     context: 'results',
-    text: '{companion} noticed that more answers clicked this time.',
+    text: 'I noticed that more answers clicked this time.',
     condition: { accuracyImproved: true },
   },
   {
     id: 'results-accuracy-improved-03',
     context: 'results',
-    text: 'That improvement came from the work you put in.',
+    text: 'Look at that—your practice is showing up in the answers.',
     condition: { accuracyImproved: true },
   },
   {
     id: 'results-accuracy-improved-04',
     context: 'results',
-    text: 'You turned practice into greater accuracy.',
+    text: 'You found more of the right answers this time.',
     condition: { accuracyImproved: true },
   },
   {
@@ -324,37 +332,37 @@ const SHARED_RESULT_PHRASES = [
   {
     id: 'results-accuracy-improved-06',
     context: 'results',
-    text: 'More of those number patterns are settling into place.',
+    text: 'More of those number patterns are clicking into place.',
     condition: { accuracyImproved: true },
   },
   {
     id: 'results-pace-improved-01',
     context: 'results',
-    text: 'That round moved more smoothly than before.',
+    text: 'That round had a smoother little rhythm than before.',
     condition: { paceImproved: true },
   },
   {
     id: 'results-pace-improved-02',
     context: 'results',
-    text: '{companion} noticed your answers finding their rhythm.',
+    text: 'I noticed your answers finding their rhythm.',
     condition: { paceImproved: true },
   },
   {
     id: 'results-pace-improved-03',
     context: 'results',
-    text: 'You kept your careful work and found a quicker pace.',
+    text: 'You kept the care and picked up the pace.',
     condition: { paceImproved: true },
   },
   {
     id: 'results-pace-improved-04',
     context: 'results',
-    text: 'Those answers arrived with a little more ease.',
+    text: 'Those answers came a little more easily this time.',
     condition: { paceImproved: true },
   },
   {
     id: 'results-pace-improved-05',
     context: 'results',
-    text: 'Your number sense is finding a comfortable rhythm.',
+    text: 'Your number sense found a comfy rhythm.',
     condition: { paceImproved: true },
   },
   {
@@ -370,12 +378,12 @@ const SHARED_CAPSULE_PHRASES = [
   {
     id: 'capsule-curious-02',
     context: 'capsule',
-    text: '{companion} is curious to meet someone new.',
+    text: 'I’m curious to meet someone new.',
   },
   {
     id: 'capsule-curious-03',
     context: 'capsule',
-    text: 'Every unopened capsule holds a new possibility.',
+    text: 'Every capsule has a little surprise tucked inside.',
   },
   {
     id: 'capsule-curious-04',
@@ -385,7 +393,7 @@ const SHARED_CAPSULE_PHRASES = [
   {
     id: 'capsule-curious-05',
     context: 'capsule',
-    text: 'A mystery companion may be just one opening away.',
+    text: 'A mystery companion is waiting for the big reveal.',
   },
   {
     id: 'capsule-playful-01',
@@ -420,36 +428,36 @@ const SHARED_CAPSULE_PHRASES = [
 ] as const satisfies readonly DialoguePhrase[];
 
 const SHARED_EQUIP_PHRASES = [
-  { id: 'equip-ready-01', context: 'equip', text: '{companion} is ready to join you.' },
-  { id: 'equip-ready-02', context: 'equip', text: 'Your new companion is by your side.' },
-  { id: 'equip-ready-03', context: 'equip', text: 'The Nook has a fresh new feeling.' },
+  { id: 'equip-ready-01', context: 'equip', text: 'I’m ready to join you!' },
+  { id: 'equip-ready-02', context: 'equip', text: 'Here I am—right by your side!' },
+  { id: 'equip-ready-03', context: 'equip', text: 'Ooh, the Nook feels different already!' },
   {
     id: 'equip-ready-04',
     context: 'equip',
-    text: '{companion} brought a favorite color palette along.',
+    text: 'I brought a whole pocketful of favorite colors.',
   },
   {
     id: 'equip-warm-01',
     context: 'equip',
-    text: 'This looks like the beginning of a good practice team.',
+    text: 'You and I already look like a cozy little team.',
     voices: ['warm'],
   },
   {
     id: 'equip-playful-01',
     context: 'equip',
-    text: 'New companion, new look, same Number Nook!',
+    text: 'New look, same Number Nook—let’s go!',
     voices: ['playful'],
   },
   {
     id: 'equip-adventurous-01',
     context: 'equip',
-    text: '{companion} is packed and ready for the next challenge.',
+    text: 'I’m packed and ready for the next challenge.',
     voices: ['adventurous'],
   },
   {
     id: 'equip-plush-01',
     context: 'equip',
-    text: '{companion} fits right into the coziest corner.',
+    text: 'I fit right into the coziest corner.',
     voices: ['plush'],
   },
 ] as const satisfies readonly DialoguePhrase[];
@@ -458,7 +466,7 @@ const SHARED_PROGRESS_PHRASES = [
   {
     id: 'progress-reflect-01',
     context: 'progress',
-    text: 'Every finished round is part of your progress.',
+    text: 'Every finished round adds another little piece to your story.',
   },
   {
     id: 'progress-reflect-02',
@@ -468,12 +476,12 @@ const SHARED_PROGRESS_PHRASES = [
   {
     id: 'progress-reflect-03',
     context: 'progress',
-    text: '{companion} likes seeing all those rounds add up.',
+    text: 'I like seeing all those rounds add up.',
   },
   {
     id: 'progress-reflect-04',
     context: 'progress',
-    text: 'Your history shows the work behind your skills.',
+    text: 'All those rounds left a pretty impressive trail behind you.',
   },
   {
     id: 'progress-reflect-05',
@@ -483,7 +491,7 @@ const SHARED_PROGRESS_PHRASES = [
   {
     id: 'progress-warm-01',
     context: 'progress',
-    text: 'There is plenty here to feel good about.',
+    text: 'There’s plenty here to feel good about.',
     voices: ['warm'],
   },
   {
@@ -495,7 +503,7 @@ const SHARED_PROGRESS_PHRASES = [
   {
     id: 'progress-thoughtful-01',
     context: 'progress',
-    text: 'Your results can help you choose what to practice next.',
+    text: 'Your results leave little clues about what to practice next.',
     voices: ['thoughtful'],
   },
   {
@@ -507,7 +515,7 @@ const SHARED_PROGRESS_PHRASES = [
   {
     id: 'progress-inventive-01',
     context: 'progress',
-    text: 'The pattern of your practice is taking shape.',
+    text: 'Your practice is making a pretty interesting pattern.',
     voices: ['inventive'],
   },
 ] as const satisfies readonly DialoguePhrase[];
@@ -522,7 +530,7 @@ const SIGNATURE_PHRASES = [
   {
     id: 'sunny-setup-01',
     context: 'setup',
-    text: 'Sunny says every challenge looks better with a bright start.',
+    text: 'I think every challenge looks better with a bright start.',
     companionIds: ['cozy-cats:sunny'],
   },
   {
@@ -534,7 +542,7 @@ const SIGNATURE_PHRASES = [
   {
     id: 'cloud-home-01',
     context: 'home',
-    text: 'Cloud saved a soft spot for some quiet practice.',
+    text: 'I saved a soft spot for some quiet practice.',
     companionIds: ['cozy-cats:cloud'],
   },
   {
@@ -546,13 +554,13 @@ const SIGNATURE_PHRASES = [
   {
     id: 'cloud-results-01',
     context: 'results',
-    text: 'Cloud thinks that round felt light and steady.',
+    text: 'That round felt as light and steady as a little cloud.',
     companionIds: ['cozy-cats:cloud'],
   },
   {
     id: 'biscuit-home-01',
     context: 'home',
-    text: 'Biscuit has a fresh batch of questions ready.',
+    text: 'I have a fresh batch of questions ready.',
     companionIds: ['cozy-cats:biscuit'],
   },
   {
@@ -570,7 +578,7 @@ const SIGNATURE_PHRASES = [
   {
     id: 'juniper-home-01',
     context: 'home',
-    text: 'Juniper knows that skills grow a little every day.',
+    text: 'I know number skills grow a little every day.',
     companionIds: ['cozy-cats:juniper'],
   },
   {
@@ -588,7 +596,7 @@ const SIGNATURE_PHRASES = [
   {
     id: 'moonbeam-home-01',
     context: 'home',
-    text: 'Moonbeam found a quiet path through the numbers.',
+    text: 'I found a quiet little path through the numbers.',
     companionIds: ['cozy-cats:moonbeam'],
   },
   {
@@ -606,7 +614,7 @@ const SIGNATURE_PHRASES = [
   {
     id: 'patches-home-01',
     context: 'home',
-    text: 'Patches is ready to add some color to practice.',
+    text: 'I’m ready to add a splash of color to practice.',
     companionIds: ['cozy-cats:patches'],
   },
   {
@@ -624,7 +632,7 @@ const SIGNATURE_PHRASES = [
   {
     id: 'gizmo-home-01',
     context: 'home',
-    text: 'Gizmo has the number machine warmed up.',
+    text: 'I have the number machine warmed up and whirring.',
     companionIds: ['cozy-cats:gizmo'],
   },
   {
@@ -642,13 +650,13 @@ const SIGNATURE_PHRASES = [
   {
     id: 'pepper-home-01',
     context: 'home',
-    text: 'Pepper spotted a fresh trail of number puzzles.',
+    text: 'I spotted a fresh trail of number puzzles!',
     companionIds: ['cozy-cats:pepper'],
   },
   {
     id: 'pepper-setup-01',
     context: 'setup',
-    text: 'Choose your trail. Pepper is ready to explore.',
+    text: 'Choose your trail. I’m ready to explore!',
     companionIds: ['cozy-cats:pepper'],
   },
   {
@@ -660,7 +668,7 @@ const SIGNATURE_PHRASES = [
   {
     id: 'aurora-home-01',
     context: 'home',
-    text: 'Aurora brought a ribbon of color to the Nook.',
+    text: 'I brought a ribbon of color to the Nook.',
     companionIds: ['cozy-cats:aurora'],
   },
   {
@@ -678,7 +686,7 @@ const SIGNATURE_PHRASES = [
   {
     id: 'comet-home-01',
     context: 'home',
-    text: 'Comet is ready to race across another number sky.',
+    text: 'I’m ready to race across another number sky!',
     companionIds: ['cozy-cats:comet'],
   },
   {
@@ -696,13 +704,13 @@ const SIGNATURE_PHRASES = [
   {
     id: 'button-bunny-home-01',
     context: 'home',
-    text: 'Button Bunny tucked a cozy challenge into the Nook.',
+    text: 'I tucked a cozy little challenge into the Nook.',
     companionIds: ['special-guests:button-bunny'],
   },
   {
     id: 'button-bunny-setup-01',
     context: 'setup',
-    text: 'Pick a round and Button Bunny will stick close by.',
+    text: 'Pick a round and I’ll stick close by.',
     companionIds: ['special-guests:button-bunny'],
   },
   {

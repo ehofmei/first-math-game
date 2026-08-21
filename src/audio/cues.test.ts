@@ -33,7 +33,7 @@ describe('audio cue catalog', () => {
 
   it('maps every gameplay audio event to a catalog cue', () => {
     expect(GAME_AUDIO_CUES).toEqual({
-      roundStart: 'correct-bubble',
+      roundStart: 'correct-chime',
       correctAnswer: 'correct-nook',
       incorrectAnswer: 'incorrect-soft',
       unavailableAction: 'incorrect-tap',

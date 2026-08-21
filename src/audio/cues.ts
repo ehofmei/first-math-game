@@ -20,7 +20,7 @@ export type AudioCueId = (typeof AUDIO_CUE_IDS)[number];
 export type AudioCueCategory = 'Answer feedback' | 'Progress and rewards';
 
 export const GAME_AUDIO_CUES = {
-  roundStart: 'correct-bubble',
+  roundStart: 'correct-chime',
   correctAnswer: 'correct-nook',
   incorrectAnswer: 'incorrect-soft',
   unavailableAction: 'incorrect-tap',

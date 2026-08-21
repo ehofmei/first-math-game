@@ -101,6 +101,12 @@ A ten-question, four-operation Advanced play test contained four focus questions
 
 Ruleset version 6 changes only the Advanced short-round rounding behavior. Replaying the observed seed now produces six focus questions and one negative subtraction question. Existing ranges, classifications, low-challenge caps, and version 5 signed-choice correction remain unchanged.
 
+### Version 7 global low-challenge correction
+
+Repeated ten-question, four-operation Advanced play tests exposed rounds containing three identities, including combinations such as `18 ÷ 1`, `639 − 639`, and `1169 + 0`, or `3397 + 0`, `3 × 1`, and `0 ÷ 17`. Each operation independently satisfied its ceiling-rounded limit, but the complete round exceeded the intended one-per-ten identity rate. These questions took roughly one to two seconds in rounds whose harder questions sometimes took twelve to fourteen seconds.
+
+Ruleset version 7 calculates a single low-challenge budget from the complete session length and allocates it across operations without weakening their focus minimums. A ten-question Advanced round may now contain zero or one identity. Ordinary review facts remain unchanged so the first comparison can isolate the effect of identity clustering; near-equal negative subtraction remains a documented follow-up observation rather than part of this correction.
+
 ## Primary comparisons
 
 Use these in order:

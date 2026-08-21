@@ -1,9 +1,9 @@
 import { getCompanionPersonality } from '../companions/personalities';
-import type { SelectedDialogue } from '../companions/types';
+import type { DialogueContext, SelectedDialogue } from '../companions/types';
 import { getCollectibleImage } from '../content/catalog';
 import type { ArtStyle, CollectibleDefinition } from '../content/schema';
 
-export type CompanionDialogueVariant = 'home' | 'setup' | 'results';
+export type CompanionDialogueVariant = DialogueContext;
 
 export function CompanionDialogue({
   companion,
@@ -45,7 +45,7 @@ export function CompanionDialogue({
       <div
         className="player-companion-dialogue__bubble"
         data-testid="player-companion-dialogue-bubble"
-        aria-live={variant === 'results' ? 'polite' : undefined}
+        aria-live={variant === 'results' || variant === 'equip' ? 'polite' : undefined}
       >
         <p data-testid="player-companion-dialogue-text">{dialogue.text}</p>
         <span>{companion.name}</span>

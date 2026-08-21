@@ -44,7 +44,7 @@ Advanced addition retains operands through `5,000` and sums through `10,000`. Ad
 
 ## Composition targets
 
-Targets are calculated separately for the number of addition slots and subtraction slots after the selected-operation schedule is balanced.
+Focus targets are calculated separately for the number of addition slots and subtraction slots after the selected-operation schedule is balanced. Starting with ruleset version 7, the low-challenge maximum is calculated from the complete session and allocated across every selected operation while retaining the original per-operation capacity.
 
 For a target expressed “per 10,” use:
 
@@ -106,16 +106,23 @@ A ten-question Advanced round containing all four operations assigns only two or
 
 Ruleset version 6 rounds only Advanced focus minimums to the nearest whole question and guarantees one negative result whenever Advanced subtraction has at least one slot. A ten-question four-operation Advanced round therefore contains six focus questions and one negative subtraction question. Number ranges, fact categories, low-challenge limits, distractors, and longer-round targets are unchanged.
 
+### Ruleset version 7 correction
+
+Ruleset version 6 still rounded each operation's low-challenge maximum upward independently. In a ten-question four-operation Advanced round, three different operations could therefore each contribute one identity even though the intended rate was one per ten questions.
+
+Ruleset version 7 plans one low-challenge budget for the complete round and allocates it deterministically among operations with available non-focus capacity. A ten-question Advanced or Hard round now contains at most one identity across all selected operations; Medium contains at most two and Easy at most three. Advanced focus and negative-subtraction minimums, ordinary review facts, operand ranges, and distractors are unchanged.
+
 ## Acceptance criteria
 
 1. Every generated problem satisfies its arithmetic, range, whole-number, and sign invariants.
 2. Every supported operation combination, difficulty, and question count composes successfully across a large fixed seed matrix.
 3. Every addition/subtraction round satisfies its low-challenge maximum, focus minimum, subtype limits, Advanced negative band, short-round uniqueness, long-round repeat spacing, and answer-frequency limit.
-4. Multiplication/division rounds continue satisfying all version 3 constraints.
-5. Identical settings and seeds reproduce identical complete rounds.
-6. Correct-answer positions remain approximately uniform.
-7. Automated simulations report zero composition violations across at least 5,000 representative seeds.
-8. Browser journeys and save/history tests continue passing after the ruleset increment.
+4. Every complete round satisfies the session-level low-challenge maximum across all selected operations.
+5. Multiplication/division rounds continue satisfying all version 3 constraints.
+6. Identical settings and seeds reproduce identical complete rounds.
+7. Correct-answer positions remain approximately uniform.
+8. Automated simulations report zero composition violations across at least 5,000 representative seeds.
+9. Browser journeys and save/history tests continue passing after the ruleset increment.
 
 ## Play-test questions
 

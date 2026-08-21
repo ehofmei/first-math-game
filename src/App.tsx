@@ -85,6 +85,11 @@ interface ReviewState {
   back: 'results' | 'history';
 }
 
+interface EquipDialogueEvent {
+  companionId: string;
+  sequence: number;
+}
+
 interface ActiveGame {
   seed: number;
   problems: Problem[];
@@ -199,7 +204,14 @@ function Onboarding({
 }) {
   const starters = getStarterCollectibles();
   const [name, setName] = useState('');
-  const [starterId, setStarterId] = useState(starters[0]?.id ?? '');
+  const [starterId, setStarterId] = useState('');
+  const selectedStarter = starters.find((starter) => starter.id === starterId);
+  const trimmedName = name.trim();
+  const callToAction = !selectedStarter
+    ? 'Choose a companion to continue'
+    : !trimmedName
+      ? 'Add your name to continue'
+      : `Start with ${selectedStarter.name}`;
 
   return (
     <main className="onboarding page-shell">
@@ -210,6 +222,20 @@ function Onboarding({
           <p>
             Solve quick math puzzles, earn Paw Coins, and discover companions for your collection.
           </p>
+          <ul className="onboarding-promises" aria-label="How Number Nook works">
+            <li>
+              <span aria-hidden="true">＋</span>
+              <strong>Practice</strong>
+            </li>
+            <li>
+              <span aria-hidden="true">🐾</span>
+              <strong>Earn</strong>
+            </li>
+            <li>
+              <span aria-hidden="true">✦</span>
+              <strong>Discover</strong>
+            </li>
+          </ul>
         </div>
         <div className="math-doodles" aria-hidden="true">
           <span>7 + 6</span>
@@ -239,30 +265,72 @@ function Onboarding({
 
         <fieldset>
           <legend>Choose your first companion</legend>
-          <p className="field-help">You can discover the others later.</p>
+          <p className="field-help">
+            Pick the friend you want beside you. You can discover the others later.
+          </p>
           <div className="starter-grid">
-            {starters.map((starter) => (
-              <CollectibleCard
-                key={starter.id}
-                collectible={starter}
-                owned
-                artStyle={DEFAULT_ART_STYLE}
-                selected={starterId === starter.id}
-                onSelect={() => {
-                  setStarterId(starter.id);
-                  onStarterSelect();
-                }}
-              />
-            ))}
+            {starters.map((starter) => {
+              const selected = starterId === starter.id;
+              return (
+                <button
+                  key={starter.id}
+                  className={`starter-choice ${selected ? 'starter-choice--selected' : ''}`}
+                  type="button"
+                  aria-pressed={selected}
+                  aria-label={starter.name}
+                  style={companionThemeCssVariables(starter.theme)}
+                  onClick={() => {
+                    setStarterId(starter.id);
+                    onStarterSelect();
+                  }}
+                >
+                  <span className="starter-choice__art">
+                    <img
+                      src={`${import.meta.env.BASE_URL}${getCollectibleImage(starter, DEFAULT_ART_STYLE)}`}
+                      alt=""
+                    />
+                    {selected && (
+                      <span className="starter-choice__check" aria-hidden="true">
+                        ✓
+                      </span>
+                    )}
+                  </span>
+                  <span className="starter-choice__name">{starter.name}</span>
+                  <span className={`rarity rarity--${starter.rarity}`}>{starter.rarity}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div
+            className={`starter-introduction ${selectedStarter ? 'starter-introduction--ready' : ''}`}
+            style={selectedStarter ? companionThemeCssVariables(selectedStarter.theme) : undefined}
+            aria-live="polite"
+          >
+            <span className="starter-introduction__spark" aria-hidden="true">
+              {selectedStarter ? '✦' : '?'}
+            </span>
+            <span>
+              <strong>
+                {selectedStarter
+                  ? `${selectedStarter.name} is ready to join you!`
+                  : 'Who will be your first companion?'}
+              </strong>
+              <small>
+                {selectedStarter
+                  ? selectedStarter.description
+                  : 'Choose one of the three friends above.'}
+              </small>
+            </span>
           </div>
         </fieldset>
 
         <button className="primary-button" type="submit" disabled={!name.trim() || !starterId}>
-          Enter Number Nook
+          {callToAction}
         </button>
         <button className="text-button" type="button" onClick={onRestore}>
           Restore a backup
         </button>
+        <p className="onboarding-local-note">No account needed. Progress stays on this device.</p>
       </form>
     </main>
   );
@@ -293,6 +361,7 @@ function Home({
 }) {
   const companion = getCollectible(save.equippedCollectibleId);
   const lastSession = save.sessions.at(-1);
+  const isFirstRound = !lastSession;
   const collectionPercent = Math.round(
     (save.ownedCollectibleIds.length / catalog.collectibles.length) * 100,
   );
@@ -301,7 +370,7 @@ function Home({
     <main className="page-shell home-page">
       <header className="home-header">
         <div>
-          <span className="eyebrow">Welcome back</span>
+          <span className="eyebrow">{isFirstRound ? 'Welcome to the Nook' : 'Welcome back'}</span>
           <h1>{save.player.name}'s Number Nook</h1>
         </div>
         <div className="home-status">
@@ -319,11 +388,15 @@ function Home({
       <section className="play-card">
         <div className="play-card__copy">
           <span className="mode-pill">{settingsSummary(save.settings)}</span>
-          <h2>Ready for a quick game?</h2>
-          <p>Take your time, aim carefully, and see what you can improve.</p>
+          <h2>{isFirstRound ? 'Your first round is ready!' : 'Ready for a quick game?'}</h2>
+          <p>
+            {isFirstRound
+              ? `Try ${save.settings.questionCount} questions, earn your first Paw Coins, and see how the Nook feels.`
+              : 'Take your time, aim carefully, and see what you can improve.'}
+          </p>
           <div className="play-actions">
             <button className="primary-button" type="button" onClick={onPlay}>
-              Play now
+              {isFirstRound ? 'Start first round' : 'Play now'}
             </button>
             <button className="secondary-button" type="button" onClick={onSetup}>
               Change game
@@ -590,6 +663,8 @@ function Play({
 }) {
   const problem = game.problems[game.index];
   const equationRef = useRef<HTMLHeadingElement>(null);
+  const [hoverReadyQuestionIndex, setHoverReadyQuestionIndex] = useState(-1);
+  const answerHoverReady = hoverReadyQuestionIndex === game.index;
 
   useEffect(() => {
     equationRef.current?.focus({ preventScroll: true });
@@ -657,7 +732,15 @@ function Play({
         </h1>
       </section>
 
-      <div className="answer-grid">
+      <div
+        className={`answer-grid${answerHoverReady ? ' answer-grid--hover-ready' : ''}`}
+        data-hover-ready={answerHoverReady}
+        onPointerMove={(event) => {
+          if (event.pointerType === 'mouse' && !answerHoverReady) {
+            setHoverReadyQuestionIndex(game.index);
+          }
+        }}
+      >
         {problem.choices.map((choice, index) => {
           let state: 'idle' | 'correct' | 'incorrect' | 'muted' = 'idle';
           if (game.feedback) {
@@ -693,6 +776,7 @@ function Results({
   onCapsule,
   onReview,
   dailyRemaining,
+  presentCoinReward,
   onCoinsPresented,
 }: {
   summary: SessionSummary;
@@ -705,16 +789,20 @@ function Results({
   onCapsule: () => void;
   onReview: () => void;
   dailyRemaining: number;
-  onCoinsPresented: () => void;
+  presentCoinReward: boolean;
+  onCoinsPresented: (summaryId: string) => void;
 }) {
-  const [visibleCoins, setVisibleCoins] = useState(0);
+  const [shouldPresentCoinReward] = useState(presentCoinReward);
+  const [visibleCoins, setVisibleCoins] = useState(
+    shouldPresentCoinReward ? 0 : summary.coinsEarned,
+  );
 
   useEffect(() => {
-    if (summary.coinsEarned <= 0) return;
+    if (!shouldPresentCoinReward || summary.coinsEarned <= 0) return;
 
     let interval: number | undefined;
     const delay = window.setTimeout(() => {
-      onCoinsPresented();
+      onCoinsPresented(summary.id);
       if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         setVisibleCoins(summary.coinsEarned);
         return;
@@ -733,7 +821,7 @@ function Results({
       window.clearTimeout(delay);
       if (interval !== undefined) window.clearInterval(interval);
     };
-  }, [onCoinsPresented, summary.coinsEarned, summary.id]);
+  }, [onCoinsPresented, shouldPresentCoinReward, summary.coinsEarned, summary.id]);
 
   return (
     <main className="page-shell narrow-page results-page">
@@ -936,11 +1024,17 @@ function RoundReview({ summary, onBack }: { summary: SessionSummary; onBack: () 
 
 function History({
   save,
+  companion,
+  dialogue,
+  artStyle,
   onBack,
   onReview,
   onClear,
 }: {
   save: SaveData;
+  companion?: CollectibleDefinition;
+  dialogue?: SelectedDialogue;
+  artStyle: ArtStyle;
   onBack: () => void;
   onReview: (session: SessionSummary) => void;
   onClear: () => void;
@@ -994,6 +1088,17 @@ function History({
           <p>Your name and device identifiers are excluded from the analysis export.</p>
         </div>
       </header>
+
+      {companion && dialogue && (
+        <section className="history-companion-coach" aria-label="A note from your companion">
+          <CompanionDialogue
+            companion={companion}
+            artStyle={artStyle}
+            dialogue={dialogue}
+            variant="progress"
+          />
+        </section>
+      )}
 
       <section className="history-overview" aria-label="Overall play history">
         <article>
@@ -1393,6 +1498,8 @@ function BackupRestore({
 
 function Capsule({
   save,
+  companion,
+  dialogue,
   reward,
   opening,
   onOpen,
@@ -1400,6 +1507,8 @@ function Capsule({
   onBack,
 }: {
   save: SaveData;
+  companion?: CollectibleDefinition;
+  dialogue?: SelectedDialogue;
   reward: CollectibleDefinition | null | undefined;
   opening: boolean;
   onOpen: () => void;
@@ -1428,6 +1537,16 @@ function Capsule({
           {save.coins}
         </div>
       </header>
+      {companion && dialogue && !opening && !reward && (
+        <section className="capsule-companion" aria-label="A note from your companion">
+          <CompanionDialogue
+            companion={companion}
+            artStyle={save.artStyle}
+            dialogue={dialogue}
+            variant="capsule"
+          />
+        </section>
+      )}
       <section
         className={`capsule-machine ${reward ? 'capsule-machine--open' : ''} ${opening ? 'capsule-machine--opening' : ''}`}
       >
@@ -1487,11 +1606,13 @@ function Capsule({
 
 function Gallery({
   save,
+  dialogue,
   onEquip,
   onArtStyleChange,
   onBack,
 }: {
   save: SaveData;
+  dialogue?: SelectedDialogue;
   onEquip: (id: string) => void;
   onArtStyleChange: (artStyle: ArtStyle) => void;
   onBack: () => void;
@@ -1526,22 +1647,36 @@ function Gallery({
         </div>
       </header>
       {equippedCompanion && (
-        <section className="collection-spotlight" aria-label="Equipped companion">
-          <img
-            src={`${import.meta.env.BASE_URL}${getCollectibleImage(equippedCompanion, save.artStyle)}`}
-            alt={equippedCompanion.altText}
-          />
-          <div className="collection-spotlight__identity">
-            <span className="eyebrow">By your side</span>
-            <h2>{equippedCompanion.name}</h2>
-            <p>{equippedCompanion.description}</p>
-            <div className="collection-spotlight__meta">
-              <span className={`rarity rarity--${equippedCompanion.rarity}`}>
-                {equippedCompanion.rarity}
-              </span>
-              <span>{getCollection(equippedCompanion.collectionId)?.name}</span>
-            </div>
-          </div>
+        <section
+          className={`collection-spotlight ${dialogue ? 'collection-spotlight--dialogue' : ''}`}
+          aria-label="Equipped companion"
+        >
+          {dialogue ? (
+            <CompanionDialogue
+              companion={equippedCompanion}
+              artStyle={save.artStyle}
+              dialogue={dialogue}
+              variant="equip"
+            />
+          ) : (
+            <>
+              <img
+                src={`${import.meta.env.BASE_URL}${getCollectibleImage(equippedCompanion, save.artStyle)}`}
+                alt={equippedCompanion.altText}
+              />
+              <div className="collection-spotlight__identity">
+                <span className="eyebrow">By your side</span>
+                <h2>{equippedCompanion.name}</h2>
+                <p>{equippedCompanion.description}</p>
+                <div className="collection-spotlight__meta">
+                  <span className={`rarity rarity--${equippedCompanion.rarity}`}>
+                    {equippedCompanion.rarity}
+                  </span>
+                  <span>{getCollection(equippedCompanion.collectionId)?.name}</span>
+                </div>
+              </div>
+            </>
+          )}
           <div className="collection-spotlight__progress">
             <strong>
               {save.ownedCollectibleIds.length}/{catalog.collectibles.length}
@@ -1648,6 +1783,7 @@ export default function App() {
   const [summary, setSummary] = useState<SessionSummary | null>(null);
   const [resultDialogueFacts, setResultDialogueFacts] = useState<ResultDialogueFacts | null>(null);
   const [activeDialogue, setActiveDialogue] = useState<SelectedDialogue | null>(null);
+  const [equipDialogueEvent, setEquipDialogueEvent] = useState<EquipDialogueEvent | null>(null);
   const [review, setReview] = useState<ReviewState | null>(null);
   const [capsuleReward, setCapsuleReward] = useState<CollectibleDefinition | null | undefined>(
     undefined,
@@ -1657,6 +1793,7 @@ export default function App() {
   const { playCue } = useAudioPlayer(audioPreferences);
   const transitionTimer = useRef<number | null>(null);
   const capsuleTimer = useRef<number | null>(null);
+  const [presentedCoinSummaryId, setPresentedCoinSummaryId] = useState<string | null>(null);
   const dialogueEventRef = useRef<string | null>(null);
   const recentDialogueRef = useRef<Partial<Record<DialogueContext, string[]>>>({});
   const equippedCompanion = save ? getCollectible(save.equippedCollectibleId) : undefined;
@@ -1684,13 +1821,24 @@ export default function App() {
     if (screen === 'home') context = 'home';
     if (screen === 'setup') context = 'setup';
     if (screen === 'results') context = 'results';
+    if (screen === 'capsule' && !capsuleOpening && !capsuleReward) context = 'capsule';
+    if (screen === 'history') context = 'progress';
+    if (screen === 'gallery' && equipDialogueEvent?.companionId === equippedCompanion?.id) {
+      context = 'equip';
+    }
 
     if (!context || !equippedCompanion) {
       dialogueEventRef.current = null;
       return;
     }
 
-    const eventKey = `${context}:${equippedCompanion.id}:${context === 'results' ? (summary?.id ?? '') : ''}`;
+    const eventIdentity =
+      context === 'results'
+        ? (summary?.id ?? '')
+        : context === 'equip'
+          ? (equipDialogueEvent?.sequence ?? '')
+          : '';
+    const eventKey = `${context}:${equippedCompanion.id}:${eventIdentity}`;
     if (dialogueEventRef.current === eventKey) return;
 
     const recentPhraseIds = recentDialogueRef.current[context] ?? [];
@@ -1708,7 +1856,15 @@ export default function App() {
     queueMicrotask(() => {
       if (dialogueEventRef.current === eventKey) setActiveDialogue(selection);
     });
-  }, [equippedCompanion, resultDialogueFacts, screen, summary?.id]);
+  }, [
+    capsuleOpening,
+    capsuleReward,
+    equipDialogueEvent,
+    equippedCompanion,
+    resultDialogueFacts,
+    screen,
+    summary?.id,
+  ]);
 
   const clearCapsuleTimer = useCallback(() => {
     if (capsuleTimer.current !== null) {
@@ -1757,6 +1913,14 @@ export default function App() {
     setSave(next);
     void repository.save(next);
   }, []);
+
+  const presentCoins = useCallback(
+    (summaryId: string) => {
+      setPresentedCoinSummaryId(summaryId);
+      void playCue(GAME_AUDIO_CUES.coinsEarned);
+    },
+    [playCue],
+  );
 
   const startGame = useCallback(() => {
     if (!save) return;
@@ -1973,7 +2137,8 @@ export default function App() {
           setScreen('review');
         }}
         dailyRemaining={dailyCoinsRemaining(save, clock.today())}
-        onCoinsPresented={() => void playCue(GAME_AUDIO_CUES.coinsEarned)}
+        presentCoinReward={presentedCoinSummaryId !== summary.id}
+        onCoinsPresented={presentCoins}
         onCapsule={() => {
           clearCapsuleTimer();
           setCapsuleReward(undefined);
@@ -1993,6 +2158,9 @@ export default function App() {
     return (
       <History
         save={save}
+        companion={equippedCompanion}
+        dialogue={activeDialogue?.context === 'progress' ? activeDialogue : undefined}
+        artStyle={save.artStyle}
         onBack={() => setScreen('home')}
         onReview={(session) => {
           setReview({ summary: session, back: 'history' });
@@ -2010,6 +2178,8 @@ export default function App() {
     return (
       <Capsule
         save={save}
+        companion={equippedCompanion}
+        dialogue={activeDialogue?.context === 'capsule' ? activeDialogue : undefined}
         reward={capsuleReward}
         opening={capsuleOpening}
         onOpen={() => {
@@ -2061,12 +2231,21 @@ export default function App() {
     return (
       <Gallery
         save={save}
+        dialogue={activeDialogue?.context === 'equip' ? activeDialogue : undefined}
         onArtStyleChange={(artStyle) => commitSave(updateArtStyle(save, artStyle))}
         onEquip={(id) => {
-          if (id !== save.equippedCollectibleId) void playCue(GAME_AUDIO_CUES.companionEquipped);
+          if (id === save.equippedCollectibleId) return;
+          void playCue(GAME_AUDIO_CUES.companionEquipped);
+          setEquipDialogueEvent((current) => ({
+            companionId: id,
+            sequence: (current?.sequence ?? 0) + 1,
+          }));
           commitSave({ ...save, equippedCollectibleId: id });
         }}
-        onBack={() => setScreen('home')}
+        onBack={() => {
+          setEquipDialogueEvent(null);
+          setScreen('home');
+        }}
       />
     );
   return (

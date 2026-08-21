@@ -63,7 +63,9 @@ These are game difficulty bands, not claims about a school curriculum. Child pla
 
 ## Composition rules
 
-Composition targets are calculated separately from the number of multiplication slots and division slots after the operation schedule is balanced. This prevents one operation from consuming all focus slots while the other receives only review facts. The cross-operation table-variety limit uses the combined number of multiplication and division slots.
+Focus targets are calculated separately from the number of multiplication slots and division slots after the operation schedule is balanced. This prevents one operation from consuming all focus slots while the other receives only review facts. The cross-operation table-variety limit uses the combined number of multiplication and division slots.
+
+Ruleset version 7 calculates the low-challenge maximum once from the complete session length, then deterministically allocates the planned identity slots across all four operation families without exceeding any operation's original capacity. This prevents ceiling each two- or three-question allocation from turning one intended Advanced identity into several identities in a short mixed round.
 
 For a limit expressed “per 10,” use:
 
@@ -153,6 +155,8 @@ Implementing this specification increments the game ruleset from version 2 to ve
 
 Ruleset version 6 leaves the version 3 multiplication/division categories and limits intact, but uses nearest-question rounding for Advanced focus minimums in short mixed rounds. This prevents four separately floored operation quotas from reducing a ten-question Advanced mixed round to only four focus questions.
 
+Ruleset version 7 keeps those focus minimums and all fact classifications intact while applying one session-level low-challenge budget: 3 per 10 on Easy, 2 per 10 on Medium, and 1 per 10 on Hard or Advanced. Medium and above may use fewer than the maximum, while Easy uses the available allowance subject to the original operation-specific capacity. Existing ruleset 6 rounds remain readable and are never regenerated.
+
 Balance exports and on-screen configuration summaries must group by all of:
 
 - Ruleset version.
@@ -174,8 +178,9 @@ Before the new composer is considered complete:
 6. Hard multiplication/division contains materially more focus facts than Medium, and Advanced contains materially more Advanced focus facts than Hard.
 7. A regression fixture representing the locally observed 11-heavy composition cannot produce five appearances of one table value in ten multiplication/division questions.
 8. A regression fixture representing the identity-heavy division composition stays within the appropriate identity limit.
-9. History summaries keep ruleset versions separate.
-10. Browser journeys for a mixed-operation round continue to pass without UI or persistence changes.
+9. Across all four operations together, the completed round stays within its session-level low-challenge maximum.
+10. History summaries keep ruleset versions separate.
+11. Browser journeys for a mixed-operation round continue to pass without UI or persistence changes.
 
 ## Tuning workflow
 

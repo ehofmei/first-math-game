@@ -60,4 +60,43 @@ describe('CompanionDialogue in a real browser', () => {
       .toHaveAttribute('aria-live', 'polite');
     await expect.element(page.getByRole('img', { name: companion.altText })).toBeVisible();
   });
+
+  it('announces equip dialogue but keeps capsule and progress navigation quiet', async () => {
+    const { rerender } = await render(
+      <CompanionDialogue
+        companion={companion}
+        artStyle="sticker"
+        dialogue={{ ...dialogue, id: 'equip-ready-01', context: 'equip' }}
+        variant="equip"
+      />,
+    );
+
+    await expect
+      .element(page.getByTestId('player-companion-dialogue-bubble'))
+      .toHaveAttribute('aria-live', 'polite');
+
+    await rerender(
+      <CompanionDialogue
+        companion={companion}
+        artStyle="sticker"
+        dialogue={{ ...dialogue, id: 'capsule-curious-01', context: 'capsule' }}
+        variant="capsule"
+      />,
+    );
+    await expect
+      .element(page.getByTestId('player-companion-dialogue-bubble'))
+      .not.toHaveAttribute('aria-live');
+
+    await rerender(
+      <CompanionDialogue
+        companion={companion}
+        artStyle="sticker"
+        dialogue={{ ...dialogue, id: 'progress-reflect-01', context: 'progress' }}
+        variant="progress"
+      />,
+    );
+    await expect
+      .element(page.getByTestId('player-companion-dialogue-bubble'))
+      .not.toHaveAttribute('aria-live');
+  });
 });

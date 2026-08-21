@@ -1,6 +1,6 @@
 # Companion Identity, Themes, and Presence
 
-This document records the direction for making equipped collectibles feel valuable throughout Number Nook while allowing the catalog to grow beyond cats. The generalized catalog, complete dual-art Nook Neighbors roster, companion palettes, Theme Lab, application-wide equipped theme, art-style setting, home and collection polish, and setup/game/results placements are implemented. A future non-cat collection remains the final proof that expansion requires content rather than species-specific application code.
+This document records the direction for making equipped collectibles feel valuable throughout Number Nook while allowing the catalog to grow beyond cats. The generalized catalog, complete dual-art Nook Neighbors roster, companion palettes, Theme Lab, application-wide equipped theme, art-style setting, collection polish, and all six initial dialogue contexts are implemented. A future non-cat collection remains the final proof that expansion requires content rather than species-specific application code.
 
 ## Product direction
 
@@ -73,8 +73,9 @@ The equipped companion should feel present without competing with arithmetic.
 | Active questions | Small static portrait in the header, outside the equation and answer grid. No dialogue or mistake reaction. |
 | Round results | Larger celebratory portrait regardless of score, paired with the round-complete treatment. |
 | Collection | A “By your side” spotlight, overall and per-collection completion counts, clear equipped state, full character details, and an easy equip action. |
-| Capsule reveal | Existing large reveal presentation, using the revealed companion's local palette where appropriate. |
-| History and backup | Theme may remain active; character imagery is optional and should not lengthen data-heavy pages. |
+| Capsule | Compact equipped-companion dialogue while idle; the revealed companion keeps the large reveal presentation without competing dialogue. |
+| History | Compact coach card above the statistics, describing current practice without implying participation in older rounds. |
+| Backup | Equipped theme remains active; character imagery is omitted from the data-focused workflow. |
 
 The next personality layer adds contextual dialogue, reusable motion profiles, and restrained motifs without introducing reactions to individual mistakes or dialogue during active questions. The complete phrase, CSS, safety, and Companion Lab contract is defined in [Companion Personality, Dialogue, and Motion](./COMPANION_PERSONALITY.md).
 

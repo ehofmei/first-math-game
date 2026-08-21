@@ -179,28 +179,17 @@ function classifyCandidate(
   };
 }
 
-function plannedLowCount(
-  count: number,
-  difficulty: DifficultyId,
-  maximumLow: number,
-  random: RandomSource,
-): number {
-  if (difficulty === 'easy') return maximumLow;
-  const base = Math.round((count * 0.5) / 10);
-  return Math.max(0, Math.min(maximumLow, base + random.integer(-1, 1)));
-}
-
 function categorySchedule(
   operation: ComposedAdditiveOperation,
   count: number,
   difficulty: DifficultyId,
+  lowCount: number,
   random: RandomSource,
 ): AdditiveCategory[] {
   if (count === 0) return [];
   const targets = additiveCompositionTargets(count, difficulty);
   const negativeCount =
     operation === 'subtraction' ? negativeSubtractionTargets(count, difficulty).minimum : 0;
-  const lowCount = plannedLowCount(count, difficulty, targets.maximumLow, random);
   const otherFocusCount = Math.max(0, targets.minimumFocus - negativeCount);
   return random.shuffle([
     ...Array.from({ length: negativeCount }, () => 'negative' as const),
@@ -265,6 +254,7 @@ function composeAttempt(
   operations: readonly ComposedAdditiveOperation[],
   difficulty: DifficultyId,
   ranges: AdditiveCompositionRanges,
+  lowCounts: Readonly<Record<ComposedAdditiveOperation, number>>,
   random: RandomSource,
 ): ComposedAdditiveFact[] | null {
   const operationCounts: Record<ComposedAdditiveOperation, number> = {
@@ -276,8 +266,20 @@ function composeAttempt(
     subtraction: 0,
   };
   const schedules: Record<ComposedAdditiveOperation, AdditiveCategory[]> = {
-    addition: categorySchedule('addition', operationCounts.addition, difficulty, random),
-    subtraction: categorySchedule('subtraction', operationCounts.subtraction, difficulty, random),
+    addition: categorySchedule(
+      'addition',
+      operationCounts.addition,
+      difficulty,
+      lowCounts.addition,
+      random,
+    ),
+    subtraction: categorySchedule(
+      'subtraction',
+      operationCounts.subtraction,
+      difficulty,
+      lowCounts.subtraction,
+      random,
+    ),
   };
   const slots = operations.map((operation) => ({
     operation,
@@ -350,11 +352,12 @@ export function composeAdditionSubtractionFacts(
   operations: readonly ComposedAdditiveOperation[],
   difficulty: DifficultyId,
   ranges: AdditiveCompositionRanges,
+  lowCounts: Readonly<Record<ComposedAdditiveOperation, number>>,
   random: RandomSource,
 ): ComposedAdditiveFact[] {
   if (operations.length === 0) return [];
   for (let attempt = 0; attempt < 100; attempt += 1) {
-    const result = composeAttempt(operations, difficulty, ranges, random);
+    const result = composeAttempt(operations, difficulty, ranges, lowCounts, random);
     if (result) return result;
   }
   throw new Error(`Unable to compose a ${difficulty} addition/subtraction session.`);

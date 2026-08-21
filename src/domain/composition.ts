@@ -173,25 +173,13 @@ function divisionCandidates(difficulty: DifficultyId, ranges: CompositionRanges)
   return candidates;
 }
 
-function plannedLowCount(
-  count: number,
-  difficulty: DifficultyId,
-  maximumLow: number,
-  random: RandomSource,
-): number {
-  if (difficulty === 'easy') return maximumLow;
-  const basePerTen = difficulty === 'medium' ? 1 : 0.5;
-  const base = Math.round((count * basePerTen) / 10);
-  return Math.max(0, Math.min(maximumLow, base + random.integer(-1, 1)));
-}
-
 function categorySchedule(
   count: number,
   difficulty: DifficultyId,
+  lowCount: number,
   random: RandomSource,
 ): FactCategory[] {
   const targets = compositionTargets(count, difficulty);
-  const lowCount = plannedLowCount(count, difficulty, targets.maximumLow, random);
   const categories: FactCategory[] = [
     ...Array.from({ length: targets.minimumFocus }, () => 'focus' as const),
     ...Array.from({ length: lowCount }, () => 'low' as const),
@@ -227,6 +215,7 @@ function composeAttempt(
   operations: readonly ComposedOperation[],
   difficulty: DifficultyId,
   candidates: readonly ComposedFact[],
+  lowCounts: Readonly<Record<ComposedOperation, number>>,
   random: RandomSource,
 ): ComposedFact[] | null {
   const operationCounts: Record<ComposedOperation, number> = {
@@ -234,8 +223,13 @@ function composeAttempt(
     division: operations.filter((operation) => operation === 'division').length,
   };
   const scheduledCategories: Record<ComposedOperation, FactCategory[]> = {
-    multiplication: categorySchedule(operationCounts.multiplication, difficulty, random),
-    division: categorySchedule(operationCounts.division, difficulty, random),
+    multiplication: categorySchedule(
+      operationCounts.multiplication,
+      difficulty,
+      lowCounts.multiplication,
+      random,
+    ),
+    division: categorySchedule(operationCounts.division, difficulty, lowCounts.division, random),
   };
   const categoryIndexes: Record<ComposedOperation, number> = {
     multiplication: 0,
@@ -333,6 +327,7 @@ export function composeMultiplicationDivisionFacts(
   operations: readonly ComposedOperation[],
   difficulty: DifficultyId,
   ranges: CompositionRanges,
+  lowCounts: Readonly<Record<ComposedOperation, number>>,
   random: RandomSource,
 ): ComposedFact[] {
   if (operations.length === 0) return [];
@@ -341,7 +336,7 @@ export function composeMultiplicationDivisionFacts(
     ...divisionCandidates(difficulty, ranges),
   ];
   for (let attempt = 0; attempt < 100; attempt += 1) {
-    const result = composeAttempt(operations, difficulty, candidates, random);
+    const result = composeAttempt(operations, difficulty, candidates, lowCounts, random);
     if (result) return result;
   }
   throw new Error(`Unable to compose a ${difficulty} multiplication/division session.`);
